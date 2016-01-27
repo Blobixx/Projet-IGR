@@ -20,7 +20,6 @@
 #include <cmath>
 #include <vector>
 #include "Vec3.h"
-#include "Vec2.h"
 
 /// A simple vertex class storing position and normal
 class Vertex {
