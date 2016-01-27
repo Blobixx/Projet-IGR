@@ -64,7 +64,7 @@ void init (const char * modelFilename) {
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f); // Background color
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 
-  camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
+  camera.resize(DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
 
   mesh.loadOFF(modelFilename);
   try {
