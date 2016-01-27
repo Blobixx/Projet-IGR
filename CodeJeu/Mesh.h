@@ -64,10 +64,7 @@ public:
 	std::vector<Triangle> T;
 
     /// Loads the mesh from a <file>.off
-	void loadOFF (const std::string & filename);
-
-  ///Load the mesh from a <file>.obj
-  void loadOBJ(const std::string&, std::vector < Vec3f > & out_vertices, std::vector <Vec3f > & out_normal, std::vector < Vec2f > & out_uvs);
+	   void loadOFF (const std::string & filename);
 
     /// Compute smooth per-vertex normals
     void recomputeNormals ();
