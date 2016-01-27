@@ -1,2 +1,3 @@
-J'ai crée les classes Board, Scene, ObjLoader
-Le dossier "pièce" va contenir les ressources des pièces, "textures" les textures, "board" le plateau
+J'ai crée les classes Board, Scene et Pieces
+Création d'une classe pour charger les fichiers .obj
+début d'implémentation de la méthode load dans le mesh --> c'est un échec ..

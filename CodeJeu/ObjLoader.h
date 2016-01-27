@@ -24,6 +24,8 @@
 #include <vector>
 #include <cmath>
 
+#include "Mesh.h"
+
 #define KEY_ESCAPE 27
 
 using namespace std;
@@ -32,14 +34,14 @@ using namespace std;
 Méthode pour charger un objet .obj
  ***************************************************************************/
 
-class Model_OBJ
+class ObjLoader
 {
   public:
-	Model_OBJ();
-  float* Model_OBJ::calculateNormal(float* coord1,float* coord2,float* coord3 );
-  int Model_OBJ::Load(string filename);	// Loads the model
-	void Model_OBJ::Draw();					// Draws the model on the screen
-	void Model_OBJ::Release();				// Release the model
+	ObjLoader();
+  float* ObjLoader::calculateNormal(float* coord1,float* coord2,float* coord3 );
+  int ObjLoader::load(string filename);	// Loads the model
+	void ObjLoader::draw();					// Draws the model on the screen
+	void ObjLoader::release();				// Release the model
 
 	float* normals;							// Stores the normals
   float* Faces_Triangles;					// Stores the triangles

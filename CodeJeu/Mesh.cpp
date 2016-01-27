@@ -23,7 +23,33 @@
 
 using namespace std;
 
+void Mesh::loadOBJ(const std::string & filename){
+	fstream in (filename.c_str ());
+    if (!in)
+        exit (1);
+	string ntrLigne;
+	unsigned int sizeV =0;
+    float x, y, z;
+    in >> ntrLigne >> x >> y >> z;
+    while(!in.eof())
+      if(in[0] == 'v'){
+				if(in[1] == ' '){
+					V[i].p = Vec3f(x,y,z);
+					sizeV++;
+			}
+			for(unsigned int j=0; j<sizeV; j++){
+				for(unsigned int k=0; k<3; k++){
+					T[j].v[k] = V[i]
+				}
+			}
 
+			}
+    }
+    in.close ();
+    centerAndScaleToUnit ();
+    recomputeNormals ();
+
+}
 void Mesh::loadOFF (const std::string & filename) {
 	ifstream in (filename.c_str ());
     if (!in)

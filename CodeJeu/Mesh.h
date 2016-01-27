@@ -66,6 +66,8 @@ public:
     /// Loads the mesh from a <file>.off
 	   void loadOFF (const std::string & filename);
 
+     void loadOBJ(const std::string & filename);
+
     /// Compute smooth per-vertex normals
     void recomputeNormals ();
 

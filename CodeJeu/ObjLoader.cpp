@@ -3,13 +3,13 @@
 #define TOTAL_FLOATS_IN_TRIANGLE 9
 using namespace std;
 
-Model_OBJ::Model_OBJ()
+ObjLoader::ObjLoader()
 {
  this->TotalConnectedTriangles = 0;
  this->TotalConnectedPoints = 0;
 }
 
-float* Model_OBJ::calculateNormal( float *coord1, float *coord2, float *coord3 )
+float* ObjLoader::calculateNormal( float *coord1, float *coord2, float *coord3 )
 {
   /* calculate Vector1 and Vector2 */
   float va[3], vb[3], vr[3], val;
@@ -38,7 +38,7 @@ float* Model_OBJ::calculateNormal( float *coord1, float *coord2, float *coord3 )
 }
 
 
-int Model_OBJ::Load(string filename)
+int ObjLoader::Load(string filename)
 {
  string line;
  ifstream objFile (filename);
@@ -131,14 +131,14 @@ int Model_OBJ::Load(string filename)
  return 0;
 }
 
-void Model_OBJ::Release()
+void ObjLoader::Release()
 {
  free(this->Faces_Triangles);
  free(this->normals);
  free(this->vertexBuffer);
 }
 
-void Model_OBJ::Draw()
+void ObjLoader::Draw()
 {
  glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
  glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
