@@ -16,7 +16,6 @@
 #include <cmath>
 
 #include "Vec3.h"
-#include "Vec2.h"
 #include "Camera.h"
 #include "Mesh.h"
 #include "GLProgram.h"
@@ -65,11 +64,7 @@ void init (const char * modelFilename) {
 
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
 
-  std::vector< Vec3f > vertices;
-  std::vector< Vec2f > uvs;
-  std::vector< Vec3f > normals; // Won't be used at the moment.
-  mesh.loadOBJ(modelFilename, vertices,normals, uvs);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vec3f), &vertices[0], GL_STATIC_DRAW);
+  mesh.loadOFF(modelFilename);
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
