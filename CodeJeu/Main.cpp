@@ -19,6 +19,8 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "GLProgram.h"
+#include "ObjLoader.h"
+
 using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;

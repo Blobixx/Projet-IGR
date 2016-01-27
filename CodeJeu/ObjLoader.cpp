@@ -1,397 +1,150 @@
-#include <GL/gl.h>
-#include <GL/glu.h>
 
-#include "objlib.h"
-
+#define POINTS_PER_VERTEX 3
+#define TOTAL_FLOATS_IN_TRIANGLE 9
 using namespace std;
 
-string doubleSlash(string s)
+Model_OBJ::Model_OBJ()
 {
-    //Remplace "//" par "/1/".
-    string s1="";
-    for(unsigned int i=0;i<s.size();i++)
-    {
-        if(i<s.size()-1&&s[i]=='/'&&s[i+1]=='/')
-        {
-            s1+="/1/";
-            i++;
-        }
-        else
-            s1+=s[i];
-    }
-    return s1;
-}
-string remplacerSlash(string s)
-{
-    //Remplace les '/' par des espaces.
-    string ret="";
-    for(unsigned int i=0;i<s.size();i++)
-    {
-        if(s[i]=='/')
-            ret+=' ';
-        else
-            ret+=s[i];
-    }
-    return ret;
-}
-vector<string> splitSpace(string s)
-{
-    //Eclate une chaîne au niveau de ses espaces.
-    vector<string> ret;
-    string s1="";
-    for(unsigned int i=0;i<s.size();i++)
-    {
-        if(s[i]==' '||i==s.size()-1)
-        {
-            if(i==s.size()-1)
-                s1+=s[i];
-            ret.push_back(s1);
-            s1="";
-        }
-        else
-            s1+=s[i];
-    }
-    return ret;
-}
-string get_directory(string s)
-{
-    string s1="",s2="";
-    for(unsigned int i=0;i<s.size();i++)
-    {
-        if(s[i]=='/'||s[i]=='\\')
-        {
-            s1+=s2+"/";
-            s2="";
-        }
-        else
-            s2+=s[i];
-    }
-    return s1;
-}
-float* vector2float(vector<float>& tableau)
-{
-    float* t=NULL;
-    t=(float*)malloc(tableau.size()*sizeof(float));
-    if(t==NULL||tableau.empty())
-    {
-        float *t1=(float*)malloc(sizeof(float)*3);
-        for(int i=0;i<3;i++)
-            t1[i]=0.;
-        return t1;
-    }
-
-    for(unsigned int i=0;i<tableau.size();i++)
-        t[i]=tableau[i];
-    return t;
+ this->TotalConnectedTriangles = 0;
+ this->TotalConnectedPoints = 0;
 }
 
-FloatVector::FloatVector(float px,float py,float pz,float pa):x(px),y(py),z(pz),a(pa)
+float* Model_OBJ::calculateNormal( float *coord1, float *coord2, float *coord3 )
 {
-}
-FloatVector::~FloatVector()
-{
-}
-FloatVector FloatVector::operator=(const FloatVector &fv)
-{
-    x=fv.x;
-    y=fv.y;
-    z=fv.z;
-    a=fv.a;
+  /* calculate Vector1 and Vector2 */
+  float va[3], vb[3], vr[3], val;
+  va[0] = coord1[0] - coord2[0];
+  va[1] = coord1[1] - coord2[1];
+  va[2] = coord1[2] - coord2[2];
 
-    return *this;
-}
+  vb[0] = coord1[0] - coord3[0];
+  vb[1] = coord1[1] - coord3[1];
+  vb[2] = coord1[2] - coord3[2];
 
-Material::Material(float r,float g,float b,string n):name(n)
-{
-    coul.x=r;
-    coul.y=g;
-    coul.z=b;
-}
-Material::Material(Material *mat)
-{
-    coul=mat->coul;
-    name=mat->name;
-}
-Material::~Material()
-{
+  /* cross product */
+  vr[0] = va[1] * vb[2] - vb[1] * va[2];
+  vr[1] = vb[0] * va[2] - va[0] * vb[2];
+  vr[2] = va[0] * vb[1] - vb[0] * va[1];
+
+  /* normalization factor */
+  val = sqrt( vr[0]*vr[0] + vr[1]*vr[1] + vr[2]*vr[2] );
+
+ float norm[3];
+ norm[0] = vr[0]/val;
+ norm[1] = vr[1]/val;
+ norm[2] = vr[2]/val;
+
+ return norm;
 }
 
-MeshObj::MeshObj(string s,MeshObj *first)
+
+int Model_OBJ::Load(string filename)
 {
-    charger_obj(s,first);
-}
-MeshObj::~MeshObj()
-{
-    free(vertice);
-    free(normals);
-    free(textures);
-    free(colours);
+ string line;
+ ifstream objFile (filename);
+ if (objFile.is_open())													// If obj file is open, continue
+ {
+   objFile.seekg (0, ios::end);										// Go to end of the file,
+   long fileSize = objFile.tellg();									// get file size
+   objFile.seekg (0, ios::beg);										// we'll use this to register memory for our 3d model
 
-    for(unsigned int i=0;i<materiaux.size();i++)
-        delete materiaux[i];
-    materiaux.clear();
-}
-void MeshObj::charger_obj(string nom,MeshObj *first)
-{
-    vector<FloatVector> ver,nor,tex,col;
-    std::vector<unsigned int> iv,it,in;
+   vertexBuffer = (float*) malloc (fileSize);							// Allocate memory for the verteces
+   Faces_Triangles = (float*) malloc(fileSize*sizeof(float));			// Allocate memory for the triangles
+   normals  = (float*) malloc(fileSize*sizeof(float));					// Allocate memory for the normals
 
-    ifstream fichier(nom.c_str(),ios::in);
+   int triangle_index = 0;												// Set triangle index to zero
+   int normal_index = 0;												// Set normal index to zero
 
-    string ligne,curname="";
+   while (! objFile.eof() )											// Start reading file data
+   {
+     getline (objFile,line);											// Get line from file
 
-    if(first) //Si ce n'est pas la première frame, on demande à celle-ci de nous passer ses matériaux et sa texture (et elle accepte ^^ )
-        first->giveMaterialsAndTex(this);
+     if (line.c_str()[0] == 'v')										// The first character is a v: on this line is a vertex stored.
+     {
+       line[0] = ' ';												// Set first character to 0. This will allow us to use sscanf
 
-    if(fichier)
-    {
-        while(getline(fichier,ligne))
-        {
-            if(ligne[0]=='v') //Coordonnées de points (vertex, texture et normale)
-            {
-                if(ligne[1]==' ') //Vertex
-                {
-                    char x[255],y[255],z[255];
-                    sscanf(ligne.c_str(),"v %s %s %s",x,y,z);
-                    ver.push_back(FloatVector(strtod(x,NULL),strtod(y,NULL),strtod(z,NULL)));
-                }
-                else if(ligne[1]=='t') //Texture
-                {
-                    char x[255],y[255];
-                    sscanf(ligne.c_str(),"vt %s %s",x,y);
-                    tex.push_back(FloatVector(strtod(x,NULL),strtod(y,NULL)));
-                }
-                else if(ligne[1]=='n') //Normale
-                {
-                    char x[255],y[255],z[255];
-                    sscanf(ligne.c_str(),"vn %s %s %s",x,y,z);
-                    nor.push_back(FloatVector(strtod(x,NULL),strtod(y,NULL),strtod(z,NULL)));
-                }
-            }
-            else if(ligne[0]=='f') //Indice faces
-            {
-                ligne=doubleSlash(ligne); //On remplace "//" par "/1/" dans toute la ligne
-                ligne=remplacerSlash(ligne); //On remplace les '/' par des espaces, ex : pour "f 1/2/3 4/5/6 7/8/9" on obtiendra "f 1 2 3 4 5 6 7 8 9"
+       sscanf(line.c_str(),"%f %f %f ",							// Read floats from the line: v X Y Z
+         &vertexBuffer[TotalConnectedPoints],
+         &vertexBuffer[TotalConnectedPoints+1],
+         &vertexBuffer[TotalConnectedPoints+2]);
 
-                vector<string> termes=splitSpace(ligne.substr(2)); //On éclate la chaîne en ses espaces (le substr permet d'enlever "f ")
+       TotalConnectedPoints += POINTS_PER_VERTEX;					// Add 3 to the total connected points
+     }
+     if (line.c_str()[0] == 'f')										// The first character is an 'f': on this line is a point stored
+     {
+         line[0] = ' ';												// Set first character to 0. This will allow us to use sscanf
 
-                int ndonnees=(int)termes.size()/3;
-                for(int i=0;i<(ndonnees==3?3:4);i++) //On aurait très bien pu mettre i<ndonnees mais je veux vraiment limiter à 3 ou 4
-                {
-                    iv.push_back(strtol(termes[i*3].c_str(),NULL,10)-1);
-                    it.push_back(strtol(termes[i*3+1].c_str(),NULL,10)-1);
-                    in.push_back(strtol(termes[i*3+2].c_str(),NULL,10)-1);
-                }
-                if(ndonnees==3) //S'il n'y a que 3 sommets on duplique le dernier pour faire un quad ayant l'apparence d'un triangle
-                {
-                    iv.push_back(strtol(termes[0].c_str(),NULL,10)-1);
-                    it.push_back(strtol(termes[1].c_str(),NULL,10)-1);
-                    in.push_back(strtol(termes[2].c_str(),NULL,10)-1);
-                }
+       int vertexNumber[4] = { 0, 0, 0 };
+               sscanf(line.c_str(),"%i%i%i",								// Read integers from the line:  f 1 2 3
+         &vertexNumber[0],										// First point of our triangle. This is an
+         &vertexNumber[1],										// pointer to our vertexBuffer list
+         &vertexNumber[2] );										// each point represents an X,Y,Z.
 
-                for(unsigned int i=0;i<materiaux.size();i++)
-                    if(materiaux[i]->name==curname)
-                    {
-                        for(int j=0;j<4;j++)
-                            col.push_back(materiaux[i]->coul); //On ajoute la couleur correspondante
-                        break;
-                    }
-            }
-            else if(ligne[0]=='m'&&first==NULL)//fichier MTL et si c'est la première frame (comme ça on ne charge pas plusieurs fois le même MTL et la même texture)
-                charger_mtl(get_directory(nom)+ligne.substr(7));
-            else if(ligne[0]=='u')//utiliser un MTL
-                curname=ligne.substr(7);
-        }
-        fichier.close();
+       vertexNumber[0] -= 1;										// OBJ file starts counting from 1
+       vertexNumber[1] -= 1;										// OBJ file starts counting from 1
+       vertexNumber[2] -= 1;										// OBJ file starts counting from 1
 
-        vector<float> tv(0),tc(0),tn(0),tt(0);
-        for(unsigned int i=0;i<iv.size();i++)
-            if(iv[i]<ver.size())
-            {
-                tv.push_back(ver[iv[i]].x);
-                tv.push_back(ver[iv[i]].y);
-                tv.push_back(ver[iv[i]].z);
 
-                tc.push_back(col[i].x);
-                tc.push_back(col[i].y);
-                tc.push_back(col[i].z);
-                tc.push_back(col[i].a);
-            }
+       /********************************************************************
+        * Create triangles (f 1 2 3) from points: (v X Y Z) (v X Y Z) (v X Y Z).
+        * The vertexBuffer contains all verteces
+        * The triangles will be created using the verteces we read previously
+        */
 
-        for(unsigned int i=0;i<in.size();i++)
-            if(in[i]<nor.size())
-            {
-                tn.push_back(nor[in[i]].x);
-                tn.push_back(nor[in[i]].y);
-                tn.push_back(nor[in[i]].z);
-            }
+       int tCounter = 0;
+       for (int i = 0; i < POINTS_PER_VERTEX; i++)
+       {
+         Faces_Triangles[triangle_index + tCounter   ] = vertexBuffer[3*vertexNumber[i] ];
+         Faces_Triangles[triangle_index + tCounter +1 ] = vertexBuffer[3*vertexNumber[i]+1 ];
+         Faces_Triangles[triangle_index + tCounter +2 ] = vertexBuffer[3*vertexNumber[i]+2 ];
+         tCounter += POINTS_PER_VERTEX;
+       }
 
-        for(unsigned int i=0;i<it.size();i++)
-            if(it[i]<tex.size())
-            {
-                tt.push_back(tex[it[i]].x);
-                tt.push_back(tex[it[i]].y);
-            }
+       /*********************************************************************
+        * Calculate all normals, used for lighting
+        */
+       float coord1[3] = { Faces_Triangles[triangle_index], Faces_Triangles[triangle_index+1],Faces_Triangles[triangle_index+2]};
+       float coord2[3] = {Faces_Triangles[triangle_index+3],Faces_Triangles[triangle_index+4],Faces_Triangles[triangle_index+5]};
+       float coord3[3] = {Faces_Triangles[triangle_index+6],Faces_Triangles[triangle_index+7],Faces_Triangles[triangle_index+8]};
+       float *norm = this->calculateNormal( coord1, coord2, coord3 );
 
-        vertice=vector2float(tv);
-        normals=vector2float(tn);
-        textures=vector2float(tt);
-        colours=vector2float(tc);
-        n_data=iv.size();
-    }
-    else
-    {
-        fprintf(stderr, "Le fichier %s n'a pas pu etre charge...",nom.c_str());
-        exit(EXIT_FAILURE);
-    }
+       tCounter = 0;
+       for (int i = 0; i < POINTS_PER_VERTEX; i++)
+       {
+         normals[normal_index + tCounter ] = norm[0];
+         normals[normal_index + tCounter +1] = norm[1];
+         normals[normal_index + tCounter +2] = norm[2];
+         tCounter += POINTS_PER_VERTEX;
+       }
 
-    ver.clear();
-    nor.clear();
-    tex.clear();
-    col.clear();
-
-    iv.clear();
-    it.clear();
-    in.clear();
-}
-void MeshObj::charger_mtl(string nom)
-{
-    ifstream fichier(nom.c_str(),ios::in);
-    string curname="";
-    if(fichier)
-    {
-        string ligne="";
-        while(getline(fichier,ligne))
-        {
-            if(ligne[0]=='n') //nouveau materiau
-                curname=ligne.substr(7);
-            else if(ligne[0]=='K'&&ligne[1]=='d') //couleur
-            {
-                vector<string> termes=splitSpace(ligne.substr(3));
-                materiaux.push_back(new Material((float)strtod(termes[0].c_str(),NULL),(float)strtod(termes[1].c_str(),NULL),(float)strtod(termes[2].c_str(),NULL),curname));
-            }
-            else if(ligne[0]=='m'&&ligne[5]=='d')//map_Kd (texture)
-            {
-                string f=get_directory(nom)+ligne.substr(7);
-                texture=loadTexture(f.c_str());
-            }
-            else if(ligne[0]=='d') //opacité
-            {
-                string n=ligne.substr(2);
-                materiaux[materiaux.size()-1]->coul.a=strtod(n.c_str(),NULL);
-            }
-        }
-        fichier.close();
-    }
-    else
-    {
-        fprintf(stderr,"Erreur lors de la lecture de %s...",nom.c_str());
-        exit(EXIT_FAILURE);
-    }
-}
-void MeshObj::draw_model(bool nor,bool tex)
-{
-    glEnableClientState(GL_VERTEX_ARRAY);
-    if(nor)
-        glEnableClientState(GL_NORMAL_ARRAY);
-    if(tex)
-    {
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glBindTexture(GL_TEXTURE_2D,texture);
-    }
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    glVertexPointer(3,GL_FLOAT,0,vertice);
-
-    if(tex)
-        glTexCoordPointer(2,GL_FLOAT,0,textures);
-    if(nor)
-        glNormalPointer(GL_FLOAT,0,normals);
-    glColorPointer(4,GL_FLOAT,0,colours);
-
-    glDrawArrays(GL_QUADS,0,n_data);
-
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-}
-void MeshObj::setMaterialsAndTex(std::vector<Material*> mats,GLuint tex)
-{
-    materiaux.clear();
-    for(unsigned int i=0;i<mats.size();i++)
-        materiaux.push_back(new Material(mats[i]));
-    texture=tex;
-}
-void MeshObj::giveMaterialsAndTex(MeshObj *target)
-{
-    target->setMaterialsAndTex(materiaux,texture);
+       triangle_index += TOTAL_FLOATS_IN_TRIANGLE;
+       normal_index += TOTAL_FLOATS_IN_TRIANGLE;
+       TotalConnectedTriangles += TOTAL_FLOATS_IN_TRIANGLE;
+     }
+   }
+   objFile.close();														// Close OBJ file
+ }
+ else
+ {
+   cout << "Unable to open file";
+ }
+ return 0;
 }
 
-AnimMesh::AnimMesh(int anframes,std::string name):nframes(anframes)
+void Model_OBJ::Release()
 {
-    for(int i=1;i<nframes;i++)
-    {
-        string nom=name+string("_");
-        char n[32]="";
-        sprintf(n,"%d",i);
-        nom+=string(n)+string(".obj");
-        
-        if(i>1)
-            frames.push_back(new MeshObj(nom,frames[0]));
-        else
-            frames.push_back(new MeshObj(nom));
-    }
-}
-AnimMesh::~AnimMesh()
-{
-    for(unsigned int i=0;i<frames.size();i++)
-        delete frames[i];
-    frames.clear();
-}
-void AnimMesh::draw(int fr,bool nor,bool tex)
-{
-    frames[fr-1]->draw_model(nor,tex);
+ free(this->Faces_Triangles);
+ free(this->normals);
+ free(this->vertexBuffer);
 }
 
-VirtualAnim::VirtualAnim():b(0),e(0),fps(0),fr(0),n_cycles(0),cycles(0),tps(0),playing(false)
+void Model_OBJ::Draw()
 {
-}
-VirtualAnim::~VirtualAnim()
-{
-}
-void VirtualAnim::start(int ab,int ae,int afps,bool back2beginning,int an_cycles)
-{
-    b=ab;
-    e=ae;
-    n_cycles=an_cycles;
-    fps=afps;
-    back=back2beginning;
-    inter=1000/fps;
-
-    fr=b;
-    cycles=0;
-    playing=true;
-    tps=SDL_GetTicks();
-}
-void VirtualAnim::stop()
-{
-    playing=false;
-}
-void VirtualAnim::draw(AnimMesh *mesh,bool nor,bool tex)
-{
-    mesh->draw(fr+1,nor,tex);
-
-    if(SDL_GetTicks()-tps>=inter&&playing)
-    {
-        fr++;
-        if(fr>=e)
-        {
-            fr=(back?0:b);
-            cycles++;
-        }
-        if(n_cycles!=-1&&cycles>=n_cycles)
-            stop();
-        tps=SDL_GetTicks();
-    }
+ glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
+ glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
+ glVertexPointer(3,GL_FLOAT,	0,Faces_Triangles);				// Vertex Pointer to triangle array
+ glNormalPointer(GL_FLOAT, 0, normals);						// Normal pointer to normal array
+ glDrawArrays(GL_TRIANGLES, 0, TotalConnectedTriangles);		// Draw the triangles
+ glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
+ glDisableClientState(GL_NORMAL_ARRAY);						// Disable normal arrays
 }
