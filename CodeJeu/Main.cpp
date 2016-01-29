@@ -77,8 +77,10 @@ void init (const char * modelFilename) {
 void drawScene () {
   //std::cout currentTime;
   glProgram->setUniform1f ("alpha", alpha);
-  float xlightPos = 5.0f*cos(currentTime/500.0f);
-  float ylightPos = 5.0f*cos(currentTime/500.0f);
+  float xlightPos = 5.0f ;
+  float ylightPos = 5.0f ;
+  //float xlightPos = 5.0f*cos(currentTime/500.0f);
+  //float ylightPos = 5.0f*cos(currentTime/500.0f);
   glProgram->setUniform3f ("lightPos", xlightPos, ylightPos, 0.0f);
   glBegin (GL_TRIANGLES);
   for (unsigned int i = 0; i < mesh.T.size (); i++)
