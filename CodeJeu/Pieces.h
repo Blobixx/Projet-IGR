@@ -33,6 +33,7 @@ private:
   std::string nom;
   int couleur;
   int x,y,z; //position 
+  Mesh mesh;
 
 
 }
