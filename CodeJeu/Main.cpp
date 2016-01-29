@@ -34,6 +34,7 @@ static bool fullScreen = false;
 
 static Camera camera;
 static Mesh mesh;
+static Mesh mesh2;
 Program * glProgram;
 
 float alpha = 0.01f;
@@ -65,7 +66,8 @@ void init (const char * modelFilename) {
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 
   camera.resize(DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
-  mesh.loadOFF(modelFilename);
+  mesh.loadOFF("off/bishop.off");
+  mesh2.loadOFF("off/table.off");
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
@@ -83,12 +85,20 @@ void drawScene () {
   //float ylightPos = 5.0f*cos(currentTime/500.0f);
   glProgram->setUniform3f ("lightPos", xlightPos, ylightPos, 0.0f);
   glBegin (GL_TRIANGLES);
-  for (unsigned int i = 0; i < mesh.T.size (); i++)
+  for (unsigned int i = 0; i < mesh.T.size (); i++) {
     for (unsigned int j = 0; j < 3; j++) {
       const Vertex & v = mesh.V[mesh.T[i].v[j]];
       glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex
       glVertex3f (v.p[0], v.p[1], v.p[2]); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
     }
+  }
+  for (unsigned int i = 0; i < mesh2.T.size (); i++) {
+    for (unsigned int j = 0; j < 3; j++) {
+      const Vertex & v = mesh2.V[mesh2.T[i].v[j]];
+      glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex
+      glVertex3f (v.p[0], v.p[1], v.p[2]); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
+    }
+  }
   glEnd ();
 }
 
@@ -174,6 +184,7 @@ int main (int argc, char ** argv) {
   glutInitWindowSize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
   window = glutCreateWindow (appTitle.c_str ());
   init (argc == 2 ? argv[1] : DEFAULT_MESH_FILE.c_str ());
+
   glutIdleFunc (idle);
   glutReshapeFunc (reshape);
   glutDisplayFunc (display);
