@@ -9,7 +9,6 @@
  *
  */
 
-#include <windows.h>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -36,17 +35,12 @@ Méthode pour charger un objet .obj
 
 class ObjLoader
 {
-  public:
-	ObjLoader();
-  float* ObjLoader::calculateNormal(float* coord1,float* coord2,float* coord3 );
-  int ObjLoader::load(string filename);	// Loads the model
-	void ObjLoader::draw();					// Draws the model on the screen
-	void ObjLoader::release();				// Release the model
 
-	float* normals;							// Stores the normals
-  float* Faces_Triangles;					// Stores the triangles
-	float* vertexBuffer;					// Stores the points which make the object
-	long TotalConnectedPoints;				// Stores the total number of connected verteces
-	long TotalConnectedTriangles;			// Stores the total number of connected triangles
+  public:
+    
+  Vec3f calculateNormal(Vec3f coord1,Vec3f coord2,Vec3f coord3 );
+  int load(string filename);	// Loads the model
+	void draw();					// Draws the model on the screen
+	void release();				// Release the model
 
 };

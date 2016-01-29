@@ -25,7 +25,7 @@ using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
-static const string DEFAULT_MESH_FILE ("Data/chress/chess.obj");
+static const string DEFAULT_MESH_FILE ("box.obj");
 
 static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Shaders");
 static GLint window;
@@ -65,8 +65,7 @@ void init (const char * modelFilename) {
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 
   camera.resize(DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
-
-  mesh.loadOFF(modelFilename);
+  mesh.loadOBJ(modelFilename);
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
@@ -76,7 +75,6 @@ void init (const char * modelFilename) {
 }
 
 void drawScene () {
-
   //std::cout currentTime;
   glProgram->setUniform1f ("alpha", alpha);
   float xlightPos = 5.0f*cos(currentTime/500.0f);

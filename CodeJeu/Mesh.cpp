@@ -23,37 +23,88 @@
 
 using namespace std;
 
+
 void Mesh::loadOBJ(const std::string & filename){
-	fstream in (filename.c_str ());
+	ifstream in (filename.c_str ());
     if (!in)
         exit (1);
-	string ntrLigne;
-	unsigned int sizeV =0;
-    float x, y, z;
-    in >> ntrLigne >> x >> y >> z;
-    while(!in.eof())
-      if(in[0] == 'v'){
-				if(in[1] == ' '){
-					V[i].p = Vec3f(x,y,z);
-					sizeV++;
-			}
-			for(unsigned int j=0; j<sizeV; j++){
-				for(unsigned int k=0; k<3; k++){
-					T[j].v[k] = V[i]
-				}
-			}
 
+	string line;
+  getline(in,line);
+	/*
+	// on parcourt le fichier une premiere fois pour avoir les tailles de V et T
+	while(!in.eof()){
+    if(line.c_str()[0]=='v'){
+				sizeV++;
+		}
+		if(line.at(0) == 'f'){
+			sizeT++;
+		}
+	}*/
+	// sauvegarder la position courante
+	long pos = in.tellg();
+	// se placer en fin de fichier
+	in.seekg( 0 , std::ios_base::end );
+	// récupérer la nouvelle position = la taille du fichier
+	long size = in.tellg() ;
+	// restaurer la position initiale du fichier
+	in.seekg( pos,  std::ios_base::beg ) ;
+	cout <<size<<endl;
+	V.resize(size);
+	T.resize(size);
+
+	in.seekg(0, ios::beg); // on se replace en haut du fichier
+	//unsigned int vCounter =0;
+	float x, y, z;
+	in >> line >> x >> y >> z;
+
+  while(!in.eof()){
+/*
+			if(line.c_str()[0]=='v'){
+				line[0]=' ';
+        in >> V[vCounter].p;
+				vCounter++;
 			}
-    }
+			int vertexNumber[3] = {0,0,0};
+			if(line.c_str()[0]=='f'){
+				line[0]=' ';
+				vertexNumber[0]= (int)x;
+				vertexNumber[1]= (int)y;
+				vertexNumber[2]= (int)z;
+				unsigned int tCounter = 0;
+				for (int i = 0; i < 3; i++)
+				{
+					T[tCounter   ].v[i] = 3*vertexNumber[i];
+					T[tCounter +1 ].v[i] =3*vertexNumber[i]+1;
+					T[tCounter +2 ].v[i] =3*vertexNumber[i]+2;
+					tCounter += 3;
+				}
+			}*/
+    if(line.at(0) == 'v' && line.size()==1){
+				char s;
+				in >> s;
+				for (unsigned int i = 0; i < size; i++)
+						in >> V[i].p;
+		}
+		char s;
+		if(line.at(0) == 'f'){
+			in >> s;
+			for (unsigned int i = 0; i < size; i++) {
+	        for (unsigned int j = 0; j < 3; j++)
+	            in >> T[i].v[j];
+	    }
+		}
+	}
     in.close ();
     centerAndScaleToUnit ();
     recomputeNormals ();
-
 }
+
 void Mesh::loadOFF (const std::string & filename) {
 	ifstream in (filename.c_str ());
     if (!in)
         exit (1);
+
 	string offString;
     unsigned int sizeV, sizeT, tmp;
     in >> offString >> sizeV >> sizeT >> tmp;

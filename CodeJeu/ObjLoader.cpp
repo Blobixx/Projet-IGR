@@ -9,7 +9,7 @@ ObjLoader::ObjLoader()
  this->TotalConnectedPoints = 0;
 }
 
-float* ObjLoader::calculateNormal( float *coord1, float *coord2, float *coord3 )
+Vec3f ObjLoader::calculateNormal( Vec3f coord1, Vec3f coord2, Vec3f coord3 )
 {
   /* calculate Vector1 and Vector2 */
   float va[3], vb[3], vr[3], val;
@@ -29,7 +29,7 @@ float* ObjLoader::calculateNormal( float *coord1, float *coord2, float *coord3 )
   /* normalization factor */
   val = sqrt( vr[0]*vr[0] + vr[1]*vr[1] + vr[2]*vr[2] );
 
- float norm[3];
+ Vec3f norm;
  norm[0] = vr[0]/val;
  norm[1] = vr[1]/val;
  norm[2] = vr[2]/val;
