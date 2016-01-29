@@ -7,7 +7,7 @@
  using namespace std;
 
 
-class Board {
+class Knight {
 
 
 
