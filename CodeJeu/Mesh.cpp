@@ -32,8 +32,8 @@ void Mesh::loadOFF (const std::string & filename) {
 	string offString;
     unsigned int sizeV, sizeT, tmp;
     in >> offString >> sizeV >> sizeT >> tmp;
-    V.resize (sizeV);
-    T.resize (sizeT);
+    V.resize (sizeV) ;
+    T.resize (sizeT) ;
     for (unsigned int i = 0; i < sizeV; i++)
         in >> V[i].p;
     int s;
