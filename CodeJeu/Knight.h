@@ -7,7 +7,9 @@
  using namespace std;
 
 
-class Knight {
+ class Knight : public Mesh {
+
+
 
 
 

@@ -7,8 +7,9 @@
  using namespace std;
 
 
-class Rook {
+class Rook : public Mesh {
 
-  
+    
+
 
 }

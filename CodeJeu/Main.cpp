@@ -19,7 +19,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "GLProgram.h"
-#include "ObjLoader.h"
+#include "Board.h"
 
 using namespace std;
 
@@ -35,6 +35,7 @@ static bool fullScreen = false;
 static Camera camera;
 static Mesh mesh;
 static Mesh mesh2;
+static Board board;
 Program * glProgram;
 
 float alpha = 0.01f;
@@ -68,6 +69,7 @@ void init (const char * modelFilename) {
   camera.resize(DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
   mesh.loadOFF("off/bishop.off");
   mesh2.loadOFF("off/table.off");
+
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
