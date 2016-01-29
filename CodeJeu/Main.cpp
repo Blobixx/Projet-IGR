@@ -65,7 +65,7 @@ void init (const char * modelFilename) {
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 
   camera.resize(DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT); // Setup the camera
-  mesh.loadOBJ(modelFilename);
+  mesh.loadOFF(modelFilename);
   try {
     glProgram = Program::genVFProgram ("Simple GL Program", "shader.vert", "shader.frag"); // Load and compile pair of shaders
     glProgram->use (); // Activate the shader program
