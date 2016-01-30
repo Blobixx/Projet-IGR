@@ -16,6 +16,7 @@
 #include <GL/glut.h>
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
+#include "Ray.h"
 
 using namespace std;
 
@@ -80,8 +81,12 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-Vec3f evaluateResponse(Vec3f intersection) {
-
+Vec3f evaluateResponse(Vec3f2 intersection) {
+  camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
+  Vec3f camPos = polarToCartesian(camPosPolar) ;
+  Vec3f wi = intersection[0] - camPos ;
+  Vec3f color = lightColor*dot(intersection[1],wi) ;
+  return color ;
 }
 
 void computeSceneNormals () {
@@ -244,6 +249,7 @@ void rayTrace () {
   for (unsigned int i = 0; i < screenWidth; i++)
 	for (unsigned int  j = 0; j < screenHeight; j++) {
 	  unsigned int index = 3*(i+j*screenWidth);
+    Vec3f()
 	  rayImage[index] = rayImage[index+1] = rayImage[index+2] = rand ()%255;
 	}
 }

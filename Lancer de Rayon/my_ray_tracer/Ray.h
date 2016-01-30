@@ -4,7 +4,8 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 
-static Vec3f camPos = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
+static Vec3f camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
+static Vec3f camPos = polarToCartesian(camPosPolar) ;
 
 using namespace std;
 
@@ -21,8 +22,13 @@ public:
 
 };
 
-Vec3f RayTriangleintersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
+struct Vec3f2 {
+  Vec3f a[2];
+};
 
+Vec3f2 RayTriangleintersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
+
+	tableauRetour[2] = {Vec3f(0.0f,0.0f,0.0f),Vec3f(0.0f,0.0f,0.0f)};
 	Vec3f e0 = p1 - p0 ;
 	direction.normalize() ;
 	Vec3f e1 = p2 - p0 ;
@@ -32,7 +38,7 @@ Vec3f RayTriangleintersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float a = dot(e0,q) ;
 
 	if ( (dot(normale,direction)>=0) ) {
-		return Vec3f(0.0f,0.0f,0.0f) ;
+		return  tableauRetour;
 	}
 
 	Vec3f s = (origin - p0)/a ;
@@ -42,27 +48,32 @@ Vec3f RayTriangleintersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float b2 = 1.0-b0-b1 ;
 
 	if ( (b0 < 0.0) | (b1<0.0) | (b2 < 0.0)) {
-		return Vec3f(0.0f,0.0f,0.0f) ;
+		return tableauRetour ;
 		}
 
 		float t = dot(e1,r) ;
 		if ( t>=0)
-		return p0*b0+p1*b1+p2*b2 ;
+		tableauRetour = { p0*b0+p1*b1+p2*b2, normale};
+		return tableauRetour;
 
-		return Vec3f(0.0f,0.0f,0.0f) ;
+
+		return tableauRetour ;
 }
 
-Vec3f raySceneIntersection(Ray ray) {
+Vec3f2 raySceneIntersection(Ray ray) {
 
-	vector<Vec3f> listeIntersections ;
+	vector<Vec3f2> listeIntersections ;
 	vector<float> listeDistances;
+
 	for (unsigned int s = 0; s < shapes.size (); s++) {
 		for (unsigned int p = 0; p < shapes[s].mesh.positions.size() / 3; p++) {
 			Vec3f vecteurCourant = Vec3f(shapes[s].mesh.positions[3*p], shapes[s].mesh.positions[3*p+1], shapes[s].mesh.positions[3*p+2]) ;
-			Vec3f ptIntersection = ray.RayTriangleintersection(vecteurCourant[0], vecteurCourant[1], vecteurCourant[2]) ;
+			Vec3f2 intersection = ray.RayTriangleintersection(vecteurCourant[0], vecteurCourant[1], vecteurCourant[2]);
+			Vec3f ptIntersection = intersection[0];
+			Vec3f ptIntersectionNormale = intersection[1];
 			if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
-				listeIntersections.push_back(ptIntersection);
-				listeDistances.push_back(dist(ptIntersection, camPos);
+				listeIntersections.push_back(intersection);
+				listeDistances.push_back(dist(intersection[0], camPos);
 			}
 		}
 	}
@@ -74,5 +85,6 @@ Vec3f raySceneIntersection(Ray ray) {
 			indice = i ;
 		}
 	}
-	return listeIntersections[indice] ;
+
+	return listeIntersections[indice], ;
 }
