@@ -1,5 +1,5 @@
 // ----------------------------------------------
-// Informatique Graphique 3D & Réalité Virtuelle.
+// Informatique Graphique 3D & Rï¿½alitï¿½ Virtuelle.
 // Projet
 // Lancer de Rayon de Monte Carlo
 // Copyright (C) 2015 Tamy Boubekeur
@@ -59,16 +59,16 @@ void printUsage () {
 			<< appTitle << std::endl
 			<< "Author : Tamy Boubekeur" << std::endl << std::endl
 			<< "Usage : ./myRayTracer [<file.obj>]" << std::endl
-			<< "Commandes clavier :" << std::endl 
+			<< "Commandes clavier :" << std::endl
 			<< "------------------" << std::endl
 			<< " ?: Print help" << std::endl
 			<< " <space>: Toggle raytracing/rasterization (GL)  display mode" << std::endl
 			<< " r: Ray trace an image from the current point of view" << std::endl
 			<< " s: Save the current ray traced image under raytraced_image.ppm" << std::endl
-			<< " <drag>+<left button>: rotate model" << std::endl 
+			<< " <drag>+<left button>: rotate model" << std::endl
 			<< " <drag>+<right button>: move model" << std::endl
 			<< " <drag>+<middle button>: zoom" << std::endl
-			<< " q, <esc>: Quit" << std::endl << std::endl; 
+			<< " q, <esc>: Quit" << std::endl << std::endl;
 }
 
 void initOpenGL () {
@@ -80,8 +80,12 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
+Vec3f evaluateResponse(Vec3f intersection) {
+
+}
+
 void computeSceneNormals () {
-  for (unsigned int s = 0; s < shapes.size (); s++) 
+  for (unsigned int s = 0; s < shapes.size (); s++)
 	if (shapes[s].mesh.normals.empty ()) {
 	  shapes[s].mesh.normals.resize (shapes[s].mesh.positions.size (), 0.f);
 	  for (size_t f = 0; f < shapes[s].mesh.indices.size() / 3; f++) {
@@ -167,10 +171,10 @@ void initLighting () {
   glEnable (GL_LIGHT0);
 }
 
-void init (const string & filename) {  
+void init (const string & filename) {
   initOpenGL ();
   unsigned int i = filename.find_last_of ("/");
-  loadScene (filename, filename.substr (0, i+1));  
+  loadScene (filename, filename.substr (0, i+1));
   initCamera ();
   initLighting ();
 }
@@ -184,8 +188,8 @@ void setupCamera () {
   Vec3f eye = polarToCartesian (camEyePolar);
   swap (eye[1], eye[2]); // swap Y and Z to keep the Y vertical
   eye += camTarget;
-  gluLookAt (eye[0], eye[1], eye[2], 
-			 camTarget[0], camTarget[1], camTarget[2], 
+  gluLookAt (eye[0], eye[1], eye[2],
+			 camTarget[0], camTarget[1], camTarget[2],
 			 0.0, 1.0, 0.0); // Set up the current modelview matrix with camera transform
 }
 
@@ -195,7 +199,7 @@ void reshape (int w, int h) {
   aspectRatio = static_cast<float>(w)/static_cast<float>(h);
   glViewport (0, 0, (GLint)w, (GLint)h); // Dimension of the drawing region in the window
   setupCamera ();
-  if (rayImage != NULL) 
+  if (rayImage != NULL)
 	delete [] rayImage;
   unsigned int l = 3*screenWidth*screenHeight;
   rayImage = new unsigned char [l];
@@ -203,7 +207,7 @@ void reshape (int w, int h) {
 }
 
 void rasterize () {
-  setupCamera ();   
+  setupCamera ();
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Erase the color and z buffers.
   glBegin (GL_TRIANGLES);
   glColor3f (1.f, 1.f, 1.f);
@@ -244,7 +248,7 @@ void rayTrace () {
 	}
 }
 
-void display () {  
+void display () {
   if (rayDisplayMode)
 	displayRayImage ();
   else
@@ -288,7 +292,7 @@ void keyboard (unsigned char keyPressed, int x, int y) {
 
 void mouse (int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON) {
-	if (state == GLUT_DOWN) {	
+	if (state == GLUT_DOWN) {
 	  mouseLeftButtonClicked = true;
 	  clickedX = x;
 	  clickedY = y;
@@ -308,7 +312,7 @@ void motion (int x, int y) {
   }
 }
 
-// This function is executed in an infinite loop. 
+// This function is executed in an infinite loop.
 void idle () {
 }
 
@@ -324,10 +328,10 @@ int main (int argc, char ** argv) {
   glutReshapeFunc (reshape); // Callback function executed whenever glut need to setup the projection matrix
   glutDisplayFunc (display); // Callback function executed when the window app need to be redrawn
   glutKeyboardFunc (keyboard); // Callback function executed when the keyboard is used
-  glutMouseFunc (mouse); // Callback function executed when a mouse button is clicked 
+  glutMouseFunc (mouse); // Callback function executed when a mouse button is clicked
   glutMotionFunc (motion); // Callback function executed when the mouse move
   glutIdleFunc (idle); // Callback function executed continuously when no other event happens (good for background procesing or animation for instance).
-  printUsage (); // By default, display the usage help of the program   
+  printUsage (); // By default, display the usage help of the program
   glutMainLoop ();
   return 0;
 }
