@@ -84,8 +84,8 @@ void initOpenGL () {
 Vec3f evaluateResponse(Vec3f2 intersection) {
   camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
   Vec3f camPos = polarToCartesian(camPosPolar) ;
-  Vec3f wi = intersection[0] - camPos ;
-  Vec3f color = lightColor*dot(intersection[1],wi) ; //on multipliera par la réflectance dans rayTrace()
+  Vec3f wi = Vec3f(intersection.a - camPos) ;
+  Vec3f color = lightColor*dot(intersection.b,wi) ; //on multipliera par la réflectance dans rayTrace()
   return color ;
 }
 
@@ -242,6 +242,61 @@ void displayRayImage () {
   glDrawPixels (screenWidth, screenHeight, GL_RGB, GL_UNSIGNED_BYTE, static_cast<void*>(rayImage));
   glutSwapBuffers ();
   glEnable (GL_DEPTH_TEST);
+}
+
+vector<Vec3f> raySceneIntersection(Ray ray) {
+
+  //chaque intersection est suivie de sa normale dans la liste;
+	vector<Vec3f> listeIntersections ;
+	vector<float> listeDistances;
+
+	for (unsigned int s = 0; s < shapes.size (); s++) {
+		//on tourne sur les triangles
+		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+			//pour chaque triangle
+
+				//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
+				unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
+				unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
+				unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
+
+				//j'ai les 3 vertices de mon triangle
+				Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
+				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
+				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
+
+				//intersection est composée de la reelle intersection et de sa normale associée au triangle
+				vector<Vec3f> intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
+
+				//on separe l'intersection meme et la normale
+				Vec3f ptIntersection = intersection[0];
+				Vec3f ptIntersectionNormale = intersection[1];
+
+				//on tient une liste des intersections du rayon avec la scene ainsi que les distances à la camera.
+				//on retournera celle dont la distance est minimale
+				if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
+					listeIntersections.push_back(ptIntersection);
+          listeIntersections.push_back(ptIntersectionNormale);
+					listeDistances.push_back(dist(ptIntersection, camPos));
+				}
+			}
+		}
+
+	//calcul du min des distances
+	float d = 100000 ;
+	unsigned int indice = 0;
+	for(unsigned int i = 0; i<listeDistances.size(); i++) {
+		if (listeDistances[i] < d) {
+			d = listeDistances[i] ;
+			indice = i ;
+		}
+	}
+
+  vector<Vec3f> retour;
+  retour.push_back(listeIntersections[2*indice]);
+  retour.push_back(listeIntersections[2*indice+1]);
+
+	return retour;
 }
 
 // MAIN FUNCTION TO CHANGE !
