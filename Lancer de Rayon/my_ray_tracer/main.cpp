@@ -309,10 +309,13 @@ void rayTrace () {
 	  unsigned int index = 3*(i+j*screenWidth);*/
     Vec3f camPos = polarToCartesian(camEyePolar) ;
 
+    float color[4] = {0.25f,0.38f,0.1f,1.f};
+
       glBegin(GL_LINES);
         for (unsigned int i =0;i< screenWidth;i++) {
           for (unsigned int j =0;j< screenHeight;j++) {
-            glColor3f(0.5,0.5,0.5) ;
+            glLineWidth(3.0f);
+            glColor4fv(color);
             glVertex3f(i,j,0);
             glVertex3f(camPos[0],camPos[1],camPos[2]);
           }
