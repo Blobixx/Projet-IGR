@@ -303,28 +303,33 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 
 // MAIN FUNCTION TO CHANGE !
 void rayTrace () {
+<<<<<<< Updated upstream
   for (unsigned int i = 0; i < screenWidth; i++)
 	for (unsigned int  j = 0; j < screenHeight; j++) {
 	  unsigned int index = 3*(i+j*screenWidth);
     Vec3f camPos = polarToCartesian(camEyePolar) ;
-
-
+=======
+//  for (unsigned int i = 0; i < screenWidth; i++)
+//	for (unsigned int  j = 0; j < screenHeight; j++) {
+//	  unsigned int index = 3*(i+j*screenWidth);
+    Vec3f camPos = polarToCartesian(camPosPolar) ;
+>>>>>>> Stashed changes
 
       glBegin(GL_LINES);
-      for (int i =0;i< screenWidth;i++) {
-      for (int j =0;j< screenHeight;j++) {
-        glVertex3f(i,j);
-        glVertex3f(camPos);
-        	glEnd ();
-
-
+        for (int i =0;i< screenWidth;i++) {
+          for (int j =0;j< screenHeight;j++) {
+            glVertex3f(i,j,0);
+            glVertex3f(camPos);
           }
-    }
-	  rayImage[index] = rand ()%255;
-    rayImage[index+1] = rand ()%255;
-    rayImage[index+2] = rand ()%255;
+        }
+    glEnd ();
+
+//          }
+//	  rayImage[index] = rand ()%255;
+//    rayImage[index+1] = rand ()%255;
+//    rayImage[index+2] = rand ()%255;
 	}
-}
+
 
 void display () {
   if (rayDisplayMode)
