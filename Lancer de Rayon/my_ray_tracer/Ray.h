@@ -9,6 +9,10 @@ static Vec3f camPos = polarToCartesian(camPosPolar) ;
 
 using namespace std;
 
+struct Vec3f2 {
+  Vec3f a[2];
+};
+
 class Ray {
 
 public:
@@ -20,18 +24,18 @@ public:
 		this->direction = direction;
 	}
 
+	Vec3f2 RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2);
+
 };
 
-struct Vec3f2 {
-  Vec3f a[2];
-};
 
-Vec3f2 RayTriangleintersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
-	tableauRetour[2] = {Vec3f(0.0f,0.0f,0.0f),Vec3f(0.0f,0.0f,0.0f)};
+Vec3f2 Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
+
+	Vec3f2 tableauRetour = {Vec3f(0.0f,0.0f,0.0f),Vec3f(0.0f,0.0f,0.0f)};
 	Vec3f e0 = p1 - p0 ;
-	direction.normalize() ;
 	Vec3f e1 = p2 - p0 ;
+	direction.normalize();
 	Vec3f normale = cross(e0,e1) ;
 	normale.normalize() ;
 	Vec3f q = cross( direction, e1) ;
@@ -66,9 +70,10 @@ Vec3f2 raySceneIntersection(Ray ray) {
 	vector<float> listeDistances;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
-		for (unsigned int p = 0; p < shapes[s].mesh.positions.size() / 3; p++) {
+		for (unsigned int p = 0; p < shapes[s].mesh.positions.size() / 9; p++) {
+			Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[3*p], shapes[s].mesh.positions[3*p+1], shapes[s].mesh.positions[3*p+2]);
 			Vec3f vecteurCourant = Vec3f(shapes[s].mesh.positions[3*p], shapes[s].mesh.positions[3*p+1], shapes[s].mesh.positions[3*p+2]) ;
-			Vec3f2 intersection = ray.RayTriangleintersection(vecteurCourant[0], vecteurCourant[1], vecteurCourant[2]);
+			Vec3f2 intersection = ray.RayTriangleIntersection(vecteurCourant[0], vecteurCourant[1], vecteurCourant[2]);
 			Vec3f ptIntersection = intersection[0];
 			Vec3f ptIntersectionNormale = intersection[1];
 			if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
