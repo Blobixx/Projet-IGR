@@ -320,7 +320,6 @@ void rayTrace () {
             glVertex3f(camPos[0],camPos[1],camPos[2]);
           }
         }
-    glEnd ();
 
 //          }
 //	  rayImage[index] = rand ()%255;
