@@ -85,7 +85,7 @@ Vec3f evaluateResponse(Vec3f2 intersection) {
   camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
   Vec3f camPos = polarToCartesian(camPosPolar) ;
   Vec3f wi = intersection[0] - camPos ;
-  Vec3f color = lightColor*dot(intersection[1],wi) ;
+  Vec3f color = lightColor*dot(intersection[1],wi) ; //on multipliera par la réflectance dans rayTrace()
   return color ;
 }
 
@@ -249,7 +249,7 @@ void rayTrace () {
   for (unsigned int i = 0; i < screenWidth; i++)
 	for (unsigned int  j = 0; j < screenHeight; j++) {
 	  unsigned int index = 3*(i+j*screenWidth);
-    Vec3f()
+
 	  rayImage[index] = rayImage[index+1] = rayImage[index+2] = rand ()%255;
 	}
 }
