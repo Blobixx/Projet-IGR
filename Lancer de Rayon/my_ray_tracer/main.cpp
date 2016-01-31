@@ -36,7 +36,7 @@ static float aspectRatio;
 static float nearPlane;
 static float farPlane;
 static Vec3f camTarget;
-static camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
+static Vec3f camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
  // Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
@@ -82,7 +82,7 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-Vec3f evaluateResponse(Vec3f2 intersection) {
+Vec3f evaluateResponse(vector<Vec3f> intersection) {
   camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
   Vec3f camPos = polarToCartesian(camPosPolar) ;
 
@@ -303,23 +303,18 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 
 // MAIN FUNCTION TO CHANGE !
 void rayTrace () {
-<<<<<<< Updated upstream
-  for (unsigned int i = 0; i < screenWidth; i++)
+
+/*  for (unsigned int i = 0; i < screenWidth; i++)
 	for (unsigned int  j = 0; j < screenHeight; j++) {
-	  unsigned int index = 3*(i+j*screenWidth);
+	  unsigned int index = 3*(i+j*screenWidth);*/
     Vec3f camPos = polarToCartesian(camEyePolar) ;
-=======
-//  for (unsigned int i = 0; i < screenWidth; i++)
-//	for (unsigned int  j = 0; j < screenHeight; j++) {
-//	  unsigned int index = 3*(i+j*screenWidth);
-    Vec3f camPos = polarToCartesian(camPosPolar) ;
->>>>>>> Stashed changes
 
       glBegin(GL_LINES);
-        for (int i =0;i< screenWidth;i++) {
-          for (int j =0;j< screenHeight;j++) {
+        for (unsigned int i =0;i< screenWidth;i++) {
+          for (unsigned int j =0;j< screenHeight;j++) {
+            glColor3f(0.5,0.5,0.5) ;
             glVertex3f(i,j,0);
-            glVertex3f(camPos);
+            glVertex3f(camPos[0],camPos[1],camPos[2]);
           }
         }
     glEnd ();
