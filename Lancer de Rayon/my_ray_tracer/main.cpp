@@ -35,8 +35,10 @@ static float fovAngle;
 static float aspectRatio;
 static float nearPlane;
 static float farPlane;
-static Vec3f camEyePolar; // Expressing the camera position in polar coordinate, in the frame of the target
+
 static Vec3f camTarget;
+static camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
+ // Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
 static Vec3f lightPos = Vec3f (1.f, 1.f, 1.f);
@@ -84,6 +86,7 @@ void initOpenGL () {
 Vec3f evaluateResponse(Vec3f2 intersection) {
   camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
   Vec3f camPos = polarToCartesian(camPosPolar) ;
+
   Vec3f wi = intersection[0] - camPos ;
   Vec3f color = lightColor*dot(intersection[1],wi) ; //on multipliera par la réflectance dans rayTrace()
   return color ;
@@ -249,8 +252,23 @@ void rayTrace () {
   for (unsigned int i = 0; i < screenWidth; i++)
 	for (unsigned int  j = 0; j < screenHeight; j++) {
 	  unsigned int index = 3*(i+j*screenWidth);
+    Vec3f camPos = polarToCartesian(camPosPolar) ;
 
-	  rayImage[index] = rayImage[index+1] = rayImage[index+2] = rand ()%255;
+
+
+      glBegin(GL_LINES);
+      for (int i =0;i< screenWidth;i++) {
+      for (int j =0;j< screenHeight;j++) {
+        glVertex3f(i,j);
+        glVertex3f(camPos);
+        	glEnd ();
+
+
+          }
+    }
+	  rayImage[index] = rand ()%255;
+    rayImage[index+1] = rand ()%255;
+    rayImage[index+2] = rand ()%255;
 	}
 }
 

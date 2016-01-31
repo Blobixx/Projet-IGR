@@ -25,6 +25,7 @@ public:
 	}
 
 	Vec3f2 RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2);
+  Vec3f2 Ray::raySceneIntersection(Ray ray) ;
 
 };
 
@@ -64,18 +65,19 @@ Vec3f2 Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 		return tableauRetour ;
 }
 
-Vec3f2 raySceneIntersection(Ray ray) {
+Vec3f2 Ray::raySceneIntersection(Ray ray) {
 
 	vector<Vec3f2> listeIntersections ;
 	vector<float> listeDistances;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
-		for (unsigned int p = 0; p < shapes[s].mesh.positions.size() / 9; p++) {
-			Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[3*p], shapes[s].mesh.positions[3*p+1], shapes[s].mesh.positions[3*p+2]);
+		for (unsigned int p = 0; p < shapes[s].mesh.positions.size() / 3; p++) {
+
 			Vec3f vecteurCourant = Vec3f(shapes[s].mesh.positions[3*p], shapes[s].mesh.positions[3*p+1], shapes[s].mesh.positions[3*p+2]) ;
 			Vec3f2 intersection = ray.RayTriangleIntersection(vecteurCourant[0], vecteurCourant[1], vecteurCourant[2]);
 			Vec3f ptIntersection = intersection[0];
 			Vec3f ptIntersectionNormale = intersection[1];
+
 			if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
 				listeIntersections.push_back(intersection);
 				listeDistances.push_back(dist(intersection[0], camPos);
