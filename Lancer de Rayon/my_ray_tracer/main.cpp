@@ -148,6 +148,34 @@ void computeSceneBoundingSphere () {
 }
 
 void buildingKdTree(){
+  float xMin = 10000.f;
+  float xMax = -10000.f;
+  float yMin = 10000.f;
+  float yMax = -10000.f;
+  float zMin = 10000.f;
+  float zMax = -10000.f;
+
+  //calcul du plus grand axe
+  for (unsigned int s = 0; s < shapes.size (); s++){
+	   for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+       if(shapes[s].mesh.positions[3*p] < xMin){xMin = shapes[s].mesh.positions[3*p];}
+       if(shapes[s].mesh.positions[3*p] > xMax){xMax = shapes[s].mesh.positions[3*p];}
+       if(shapes[s].mesh.positions[3*p+1] < yMin){yMin = shapes[s].mesh.positions[3*p+1];}
+       if(shapes[s].mesh.positions[3*p+1] > yMax){yMax = shapes[s].mesh.positions[3*p+1];}
+       if(shapes[s].mesh.positions[3*p+2] < zMin){zMin = shapes[s].mesh.positions[3*p+2];}
+       if(shapes[s].mesh.positions[3*p+2] > zMax){zMax = shapes[s].mesh.positions[3*p+1];}
+     }
+  }
+
+  float distX = xMax - xMin;
+  float distY = yMax - yMin;
+  float distZ = zMax - zMin;
+
+  //axe choisi
+  float tmp = max(distX,distY);
+  float axis = max(tmp,distZ);
+
+
 
 }
 
