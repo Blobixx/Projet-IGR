@@ -147,7 +147,7 @@ void computeSceneBoundingSphere () {
     }
 }
 
-void buildingKdTree(){
+float calculPlusGrandAxeCubeEnglobant(){
   float xMin = 10000.f;
   float xMax = -10000.f;
   float yMin = 10000.f;
@@ -174,6 +174,14 @@ void buildingKdTree(){
   //axe choisi
   float tmp = max(distX,distY);
   float axis = max(tmp,distZ);
+
+  return axis;
+}
+
+void buildingKdTree(list){
+
+
+
 
 
 
