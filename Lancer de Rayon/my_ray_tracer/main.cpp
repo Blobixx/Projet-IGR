@@ -17,6 +17,7 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
+#include "Node.h"
 
 using namespace std;
 
@@ -57,6 +58,9 @@ static float baseCamTheta;
 
 // Raytraced image
 static unsigned char * rayImage = NULL;
+
+//kD-Tree
+vector<Node> kDTree;
 
 void printUsage () {
   std::cerr << std::endl // send a line break to the standard error output
@@ -141,6 +145,10 @@ void computeSceneBoundingSphere () {
       if (d > sceneRadius)
 		sceneRadius = d;
     }
+}
+
+void buildingKdTree(){
+
 }
 
 // Loads an OBJ file using tinyOBJ (http://syoyo.github.io/tinyobjloader/)
