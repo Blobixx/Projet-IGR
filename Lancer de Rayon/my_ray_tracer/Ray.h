@@ -11,14 +11,6 @@ static Vec3f camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
 static Vec3f camPos = polarToCartesian(camPosPolar) ;
 
 
-
-struct Vec3f2 {
-
-  Vec3f a;
-	Vec3f b;
-
-};
-
 class Ray {
 
 public:
@@ -41,6 +33,7 @@ vector<Vec3f> Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	vector<Vec3f> tableauRetour;
 	tableauRetour.push_back(Vec3f(0.0f,0.0f,0.0f));
 	tableauRetour.push_back(Vec3f(0.0f,0.0f,0.0f));
+  tableauRetour.resize(2);
 
 	Vec3f e0 = p1 - p0 ;
 	Vec3f e1 = p2 - p0 ;
@@ -69,6 +62,7 @@ vector<Vec3f> Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 		tableauRetour.clear();
 		tableauRetour.push_back(p0*b0+p1*b1+p2*b2);
 		tableauRetour.push_back(normale);
+    tableauRetour.resize(2);
 		return tableauRetour;
 
 

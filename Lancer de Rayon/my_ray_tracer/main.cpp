@@ -26,17 +26,19 @@ static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static const char * DEFAULT_SCENE_FILENAME = "scenes/cornell_box/cornell_box.obj";
 static string appTitle ("MCRT - Monte Carlo Ray Tracer");
 static GLint window;
-static unsigned int screenWidth;
-static unsigned int screenHeight;
+static unsigned int screenWidth = 1024;
+static unsigned int screenHeight = 768;
 static bool rayDisplayMode = false;
 
 // Camera parameters
-static float fovAngle;
-static float aspectRatio;
+static float fovAngle = 45.f ;
+static float aspectRatio = 1024/768;
 static float nearPlane;
 static float farPlane;
 static Vec3f camTarget;
-static Vec3f camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
+static Vec3f camEyePolar = Vec3f(2.f*5.f, M_PI/2.f, M_PI/2.f);
+static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
+static Vec3f camUp = Vec3f(0,0,1);
  // Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
@@ -83,10 +85,7 @@ void initOpenGL () {
 }
 
 Vec3f evaluateResponse(vector<Vec3f> intersection) {
-  camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f) ;
-  Vec3f camPos = polarToCartesian(camPosPolar) ;
-
-  Vec3f wi = intersection[0] - camPos ;
+  Vec3f wi = intersection[0] - lightPos ;
   Vec3f color = lightColor*dot(intersection[1],wi) ; //on multipliera par la réflectance dans rayTrace()
   return color ;
 }
@@ -160,11 +159,9 @@ bool loadScene(const string & filename, const string & basepath = "") {
 }
 
 void initCamera () {
-  fovAngle = 45.f;
   nearPlane = sceneRadius/10000.0f;
   farPlane = 10*sceneRadius;
   camTarget = sceneCenter;
-  camEyePolar = Vec3f (2.f * sceneRadius, M_PI/2.f, M_PI/2.f);
 }
 
 void initLighting () {
@@ -248,8 +245,10 @@ void displayRayImage () {
 
 vector<Vec3f> raySceneIntersection(Ray ray) {
 
+
   //chaque intersection est suivie de sa normale dans la liste;
 	vector<Vec3f> listeIntersections ;
+  listeIntersections.resize(10000000);
 	vector<float> listeDistances;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
@@ -279,7 +278,7 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 				if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
 					listeIntersections.push_back(ptIntersection);
           listeIntersections.push_back(ptIntersectionNormale);
-					listeDistances.push_back(dist(ptIntersection, camPos));
+					listeDistances.push_back(dist(ptIntersection, camEyeCartesian));
 				}
 			}
 		}
@@ -295,6 +294,7 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 	}
 
   vector<Vec3f> retour;
+  retour.resize(2);
   retour.push_back(listeIntersections[2*indice]);
   retour.push_back(listeIntersections[2*indice+1]);
 
@@ -304,29 +304,35 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 // MAIN FUNCTION TO CHANGE !
 void rayTrace () {
 
-/*  for (unsigned int i = 0; i < screenWidth; i++)
-	for (unsigned int  j = 0; j < screenHeight; j++) {
-	  unsigned int index = 3*(i+j*screenWidth);*/
-    Vec3f camPos = polarToCartesian(camEyePolar) ;
+  //Direction dans la quelle regarde la camera
+  Vec3f d = camTarget - camEyeCartesian;
+  // Calcul de la largeur et de la longueur de l'image centree en camTarget
+  float h = 2*(d.length())*tan(fovAngle/2) ;
+  float w = aspectRatio*h ;
+  // Calcul des pas de parcours de l'image
+  Vec3f Dv =  (h/screenHeight)*Vec3f(0.0f,1.0f,0.0f) ;
+  Vec3f Du = (w/screenWidth)*Vec3f(1.0f,0.0f,0.0f) ;
+  // Calcul de la position du pixel P(0,0)
+  Vec3f positionDepart = camTarget - (w/2)*Vec3f(1.0f,0.0f,0.0f) + (h/2)*Vec3f(0.0f,1.0f,0.0f);
 
-    float color[4] = {0.25f,0.38f,0.1f,1.f};
+  // Debut de la boucle de remplissage de l'image
+  for (unsigned int i = 0; i < screenWidth; i++) {
+	  for (unsigned int  j = 0; j < screenHeight; j++) {
 
-      glBegin(GL_LINES);
-        for (unsigned int i =0;i< screenWidth;i++) {
-          for (unsigned int j =0;j< screenHeight;j++) {
-            glLineWidth(3.0f);
-            glColor4fv(color);
-            glVertex3f(i,j,0);
-            glVertex3f(camPos[0],camPos[1],camPos[2]);
-          }
-        }
+      // Calcul de la couleur du pixel
+	    unsigned int index = 3*(i+j*screenWidth);
+      Vec3f positionPixel = positionDepart + Du*i+Dv*j;
+      Ray rayon = Ray(camEyeCartesian, positionPixel) ;
+      vector<Vec3f> intersection = raySceneIntersection(rayon) ;
+      intersection.resize(2);
+      Vec3f pixelColor = evaluateResponse(intersection) ;
 
-//          }
-//	  rayImage[index] = rand ()%255;
-//    rayImage[index+1] = rand ()%255;
-//    rayImage[index+2] = rand ()%255;
-	}
-
+      rayImage[index] = pixelColor[0] ;
+      rayImage[index+1] = pixelColor[1] ;
+      rayImage[index+2] = pixelColor[2];
+	    }
+    }
+}
 
 void display () {
   if (rayDisplayMode)
