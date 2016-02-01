@@ -90,9 +90,36 @@ void initOpenGL () {
 
 Vec3f evaluateResponse(vector<Vec3f> intersection) {
   Vec3f wi = intersection[0] - lightPos ;
-  Vec3f color = lightColor*dot(intersection[1],wi) ; //on multipliera par la réflectance dans rayTrace()
+  Vec3f w0= camEyeCartesian-intersection[0];
+  Vec3f wh = Vec3f(w0 + wi );
+
+
+
+
+    float alphaP = 0.01;
+    // GGX
+    float GGGX1 = (dot(intersection[1],wi)*2)/(dot(intersection[1],wi)+sqrt(pow(alphaP,2)+(1-pow(alphaP,2))*(pow(dot(intersection[1],wi),2))))  ;
+    float GGGX2 = (dot(intersection[1],w0)*2)/(dot(intersection[1],w0)+sqrt(pow(alphaP,2)+(1-pow(alphaP,2))*(pow(dot(intersection[1],w0),2))))  ;
+    float GGGX = GGGX1*GGGX2 ;
+
+    float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection[1],wh),2),2)) ;
+
+
+
+    float F0 = 0.04 ;
+	  float zero = 0.0 ;
+	  float Fresnel = F0 + (1-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
+
+    Vec3f fs_GGX = (DGGX*Fresnel*GGGX)/(dot(intersection[1],wi)*dot(intersection[1],w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
+  //  Vec3f fd = Vec/ 3.14;
+    Vec3f f = fs_GGX;
+
+
+  Vec3f color = lightColor*dot(intersection[1],wi)*f ; //on multipliera par la réflectance dans rayTrace()
   return color ;
 }
+
+
 
 void computeSceneNormals () {
   for (unsigned int s = 0; s < shapes.size (); s++)
@@ -264,7 +291,7 @@ void rasterize () {
 	  if (!materials.empty ()) {
 		unsigned int i = shapes[s].mesh.material_ids[f];
 		glColor3f (materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
-	  }
+  }
 	  for (size_t v = 0; v  < 3; v++) {
 		unsigned int index = 3*shapes[s].mesh.indices[3*f+v];
 		glNormal3f (shapes[s].mesh.normals[index],
@@ -345,6 +372,15 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 	return retour;
 }
 
+int calculOmbre(vector<Vec3f> intersection){
+
+    Ray rayon = Ray(intersection[0]+0.0001f*intersection[1],lightPos);
+  if( ! raySceneIntersection(rayon).empty() ) {
+    return 0;
+  }
+    else return 1;
+
+}
 // MAIN FUNCTION TO CHANGE !
 void rayTrace () {
 
@@ -369,7 +405,12 @@ void rayTrace () {
       Ray rayon = Ray(camEyeCartesian, positionPixel) ;
       vector<Vec3f> intersection = raySceneIntersection(rayon) ;
       intersection.resize(2);
-      Vec3f pixelColor = evaluateResponse(intersection) ;
+
+      int val = calculOmbre(intersection);
+
+      Vec3f pixelColor = evaluateResponse(intersection) * val; 
+    //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
+
 
       rayImage[index] = pixelColor[0] ;
       rayImage[index+1] = pixelColor[1] ;
