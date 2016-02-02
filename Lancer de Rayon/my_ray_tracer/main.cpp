@@ -17,7 +17,8 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
-#include "Node.h"
+#include "KdNode.h"
+#include "BoundingBox.h"
 
 using namespace std;
 
@@ -59,8 +60,6 @@ static float baseCamTheta;
 // Raytraced image
 static unsigned char * rayImage = NULL;
 
-//kD-Tree
-vector<Node> kDTree;
 
 void printUsage () {
   std::cerr << std::endl // send a line break to the standard error output
@@ -89,12 +88,10 @@ void initOpenGL () {
 }
 
 Vec3f evaluateResponse(vector<Vec3f> intersection) {
+
   Vec3f wi = intersection[0] - lightPos ;
   Vec3f w0= camEyeCartesian-intersection[0];
   Vec3f wh = Vec3f(w0 + wi );
-
-
-
 
     float alphaP = 0.01;
     // GGX
@@ -104,8 +101,6 @@ Vec3f evaluateResponse(vector<Vec3f> intersection) {
 
     float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection[1],wh),2),2)) ;
 
-
-
     float F0 = 0.04 ;
 	  float zero = 0.0 ;
 	  float Fresnel = F0 + (1-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
@@ -113,7 +108,6 @@ Vec3f evaluateResponse(vector<Vec3f> intersection) {
     Vec3f fs_GGX = (DGGX*Fresnel*GGGX)/(dot(intersection[1],wi)*dot(intersection[1],w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
   //  Vec3f fd = Vec/ 3.14;
     Vec3f f = fs_GGX;
-
 
   Vec3f color = lightColor*dot(intersection[1],wi)*f ; //on multipliera par la réflectance dans rayTrace()
   return color ;
@@ -172,46 +166,6 @@ void computeSceneBoundingSphere () {
       if (d > sceneRadius)
 		sceneRadius = d;
     }
-}
-
-float calculPlusGrandAxeCubeEnglobant(){
-  float xMin = 10000.f;
-  float xMax = -10000.f;
-  float yMin = 10000.f;
-  float yMax = -10000.f;
-  float zMin = 10000.f;
-  float zMax = -10000.f;
-
-  //calcul du plus grand axe
-  for (unsigned int s = 0; s < shapes.size (); s++){
-	   for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-       if(shapes[s].mesh.positions[3*p] < xMin){xMin = shapes[s].mesh.positions[3*p];}
-       if(shapes[s].mesh.positions[3*p] > xMax){xMax = shapes[s].mesh.positions[3*p];}
-       if(shapes[s].mesh.positions[3*p+1] < yMin){yMin = shapes[s].mesh.positions[3*p+1];}
-       if(shapes[s].mesh.positions[3*p+1] > yMax){yMax = shapes[s].mesh.positions[3*p+1];}
-       if(shapes[s].mesh.positions[3*p+2] < zMin){zMin = shapes[s].mesh.positions[3*p+2];}
-       if(shapes[s].mesh.positions[3*p+2] > zMax){zMax = shapes[s].mesh.positions[3*p+1];}
-     }
-  }
-
-  float distX = xMax - xMin;
-  float distY = yMax - yMin;
-  float distZ = zMax - zMin;
-
-  //axe choisi
-  float tmp = max(distX,distY);
-  float axis = max(tmp,distZ);
-
-  return axis;
-}
-
-void buildingKdTree(list){
-
-
-
-
-
-
 }
 
 // Loads an OBJ file using tinyOBJ (http://syoyo.github.io/tinyobjloader/)
@@ -315,8 +269,6 @@ void displayRayImage () {
 }
 
 vector<Vec3f> raySceneIntersection(Ray ray) {
-
-
   //chaque intersection est suivie de sa normale dans la liste;
 	vector<Vec3f> listeIntersections ;
   listeIntersections.resize(10000000);
@@ -326,17 +278,14 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 		//on tourne sur les triangles
 		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
 			//pour chaque triangle
-
 				//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
 				unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
 				unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
 				unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
-
 				//j'ai les 3 vertices de mon triangle
 				Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
 				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
 				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
-
 				//intersection est composée de la reelle intersection et de sa normale associée au triangle
 				vector<Vec3f> intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
 
@@ -353,7 +302,6 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 				}
 			}
 		}
-
 	//calcul du min des distances
 	float d = 100000 ;
 	unsigned int indice = 0;
@@ -363,12 +311,10 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 			indice = i ;
 		}
 	}
-
   vector<Vec3f> retour;
   retour.resize(2);
   retour.push_back(listeIntersections[2*indice]);
   retour.push_back(listeIntersections[2*indice+1]);
-
 	return retour;
 }
 
@@ -381,9 +327,8 @@ int calculOmbre(vector<Vec3f> intersection){
     else return 1;
 
 }
-// MAIN FUNCTION TO CHANGE !
-void rayTrace () {
 
+void rayTrace () {
   //Direction dans la quelle regarde la camera
   Vec3f d = camTarget - camEyeCartesian;
   // Calcul de la largeur et de la longueur de l'image centree en camTarget
@@ -408,7 +353,7 @@ void rayTrace () {
 
       int val = calculOmbre(intersection);
 
-      Vec3f pixelColor = evaluateResponse(intersection) * val; 
+      Vec3f pixelColor = evaluateResponse(intersection) * val;
     //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
 
 
