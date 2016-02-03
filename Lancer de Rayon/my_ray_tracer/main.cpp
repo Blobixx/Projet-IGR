@@ -85,6 +85,7 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
+
 int calculTailleTotalDePoints(){
   unsigned int taille=0;
   for (unsigned int s = 0; s < shapes.size (); s++){
@@ -96,6 +97,25 @@ int calculTailleTotalDePoints(){
    return taille;
 }
 
+//retourne la liste de tous les points de la scene
+vector<float> getListOfAllPoints(){
+  vector<float> pointList;
+  unsigned int taille=calculTailleTotalDePoints();
+  pointList.resize(taille);
+  unsigned int i=0;
+  for (unsigned int s = 0; s < shapes.size (); s++){
+     for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+
+       pointList[i]=shapes[s].mesh.positions[3*p] ;
+       pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
+       pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
+       i=i+3;
+     }
+  }
+  return pointList ;
+}
+
+//rendvoie la couleur
 Vec3f evaluateResponse(Intersection intersection) {
 
   Vec3f wi = intersection.ptIntersection - lightPos ;
@@ -122,24 +142,8 @@ Vec3f evaluateResponse(Intersection intersection) {
   return color ;
 }
 
-vector<float> createListPointOrigine(){
 
-vector<float> pointList;
-unsigned int taille=calculTailleTotalDePoints();
- pointList.resize(taille);
- unsigned int i=0;
-  for (unsigned int s = 0; s < shapes.size (); s++){
-     for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-
-       pointList[i]=shapes[s].mesh.positions[3*p] ;
-       pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
-       pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
-       i=i+3;
-     }
-  }
-  return pointList ;
-}
-
+//calcul de la boite englobatnte miniaml d'une liste de point
 BoundingBox computeBoundingBox(vector<float> pointList) {
   float xMin = 10000.f;
   float xMax = -10000.f;
@@ -167,6 +171,7 @@ BoundingBox computeBoundingBox(vector<float> pointList) {
   return boundingBox;
 }
 
+//algorithme de TriSelection
 vector<float> TriSelection(vector<float> liste,unsigned int n) {
 	for(unsigned int i=0 ; i < n ; i++) {				//on parcourt le tableau
 		unsigned int p = i ;
@@ -189,6 +194,7 @@ vector<float> TriSelection(vector<float> liste,unsigned int n) {
   return listeRetour ;
 }
 
+//retourne la coordonnee du point median selon le grand axe de la boite
 float findMedianSample(BoundingBox boundingBox, vector<float> pointList) {
   char axeMax = boundingBox.maxAxis() ;
   int sizeList = pointList.size()/3 ;
@@ -224,6 +230,7 @@ float findMedianSample(BoundingBox boundingBox, vector<float> pointList) {
 
 }
 
+//partie superieur selon le point median
 vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
 
     vector<float> upperPartition ;
@@ -266,6 +273,7 @@ vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
     return upperPartition ;
 }
 
+//partie  inferieure
 vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
 
     vector<float> lowerPartition ;

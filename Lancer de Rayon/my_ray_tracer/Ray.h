@@ -27,7 +27,7 @@ public:
 };
 
 
-
+//renvoie l'intersection entre le rayon et un triangle
 Intersection Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
 	Intersection tableauRetour = Intersection(camEyeCartesian,Vec3f(0.f,0.f,0.f));

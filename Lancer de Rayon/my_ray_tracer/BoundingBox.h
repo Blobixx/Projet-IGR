@@ -49,6 +49,7 @@ class BoundingBox {
 
 } ;
 
+//renvoie la char correspondant a l'axe le plus grand
 char BoundingBox::maxAxis() {
   float xMin = this->getXMin();
   float xMax = this->getXMax();
