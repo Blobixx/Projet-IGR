@@ -142,7 +142,6 @@ Vec3f evaluateResponse(Intersection intersection) {
   return color ;
 }
 
-
 //calcul de la boite englobatnte miniaml d'une liste de point
 BoundingBox computeBoundingBox(vector<float> pointList) {
   float xMin = 10000.f;
