@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <GL/glut.h>
+
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
@@ -38,7 +39,7 @@ static float aspectRatio = 1024/768;
 static float nearPlane;
 static float farPlane;
 static Vec3f camTarget;
-static Vec3f camUp = Vec3f(0,0,1);
+static Vec3f camUp = Vec3f(0.0f,1.0f,0.0f);
  // Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
@@ -54,6 +55,8 @@ static bool mouseLeftButtonClicked = false;
 static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
+static Vec3f directionU = cross(camEyeCartesian-camTarget, camUp) ;
+static Vec3f directionV = cross(-directionU, camEyeCartesian-camTarget) ;
 
 // Raytraced image
 static unsigned char * rayImage = NULL;
@@ -515,15 +518,18 @@ int calculOmbre(Intersection intersection){
 void rayTrace () {
   //Direction dans la quelle regarde la camera
   Vec3f d = camTarget - camEyeCartesian;
+  // Repere de l'image norme
+  directionU.normalize() ;
+  directionV.normalize() ;
   // Calcul de la largeur et de la longueur de l'image centree en camTarget
   float h = 2*(d.length())*tan(fovAngle/2) ;
   float w = aspectRatio*h ;
   // Calcul des pas de parcours de l'image
-  Vec3f Dv =  (h/screenHeight)*Vec3f(0.0f,1.0f,0.0f) ;
-  Vec3f Du = (w/screenWidth)*Vec3f(1.0f,0.0f,0.0f) ;
+  Vec3f Dv =  (h/screenHeight)*directionU ;
+  Vec3f Du = (w/screenWidth)*directionV ;
+
   // Calcul de la position du pixel P(0,0)
   Vec3f positionDepart = camTarget - (w/2)*Vec3f(1.0f,0.0f,0.0f) + (h/2)*Vec3f(0.0f,1.0f,0.0f);
-
   // Debut de la boucle de remplissage de l'image
   for (unsigned int i = 0; i < screenWidth; i++) {
 	  for (unsigned int  j = 0; j < screenHeight; j++) {
