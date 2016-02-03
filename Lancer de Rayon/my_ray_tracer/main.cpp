@@ -17,8 +17,8 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
-#include "KdNode.h"
-#include "BoundingBox.h"
+/*#include "KdNode.h"
+#include "BoundingBox.h"*/
 
 using namespace std;
 
@@ -38,8 +38,6 @@ static float aspectRatio = 1024/768;
 static float nearPlane;
 static float farPlane;
 static Vec3f camTarget;
-static Vec3f camEyePolar = Vec3f(2.f*5.f, M_PI/2.f, M_PI/2.f);
-static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
 static Vec3f camUp = Vec3f(0,0,1);
  // Expressing the camera position in polar coordinate, in the frame of the target
 
@@ -87,7 +85,7 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-Vec3f evaluateResponse(Intersectionintersection) {
+Vec3f evaluateResponse(Intersection intersection) {
 
   Vec3f wi = intersection.ptIntersection - lightPos ;
   Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
@@ -290,7 +288,8 @@ Intersection raySceneIntersection(Ray ray) {
 
 				//on retournera celle dont la distance est minimale
 				if(intersection.ptIntersection != camEyeCartesian) {
-          if(dist(intersection.ptIntersection,camEyeCartesian) < distanceMin)){
+          float d = dist(intersection.ptIntersection,camEyeCartesian);
+          if( d < distanceMin){
             retour = intersection;
           }
 				}
