@@ -4,11 +4,12 @@
 #include <vector>
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
+#include "Intersection"
 
 using namespace std;
 
-static Vec3f camPosPolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
-static Vec3f camPos = polarToCartesian(camPosPolar) ;
+static Vec3f camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
+static Vec3f camEyeCartesian = polarToCartesian(camEyePolar) ;
 
 
 class Ray {
@@ -22,18 +23,15 @@ public:
 		this->direction = direction;
 	}
 
-	vector<Vec3f> RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2);
+	Intersection RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2);
 
 };
 
 
 
-vector<Vec3f> Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
+Intersection Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
-	vector<Vec3f> tableauRetour;
-	tableauRetour.push_back(Vec3f(0.0f,0.0f,0.0f));
-	tableauRetour.push_back(Vec3f(0.0f,0.0f,0.0f));
-  tableauRetour.resize(2);
+	Intersection tableauRetour = Intersection(camEyeCartesian,Vec3f(0.f,0.f,0.f));
 
 	Vec3f e0 = p1 - p0 ;
 	Vec3f e1 = p2 - p0 ;
@@ -59,12 +57,9 @@ vector<Vec3f> Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
 		float t = dot(e1,r) ;
 		if ( t>=0)
-		tableauRetour.clear();
-		tableauRetour.push_back(p0*b0+p1*b1+p2*b2);
-		tableauRetour.push_back(normale);
-    tableauRetour.resize(2);
+		tableauRetour.ptIntersection = p0*b0+p1*b1+p2*b2;
+		tableauRetour.normal = normale;
 		return tableauRetour;
-
 
 		return tableauRetour ;
 }

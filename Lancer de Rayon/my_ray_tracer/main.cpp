@@ -87,29 +87,29 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-Vec3f evaluateResponse(vector<Vec3f> intersection) {
+Vec3f evaluateResponse(Intersectionintersection) {
 
-  Vec3f wi = intersection[0] - lightPos ;
-  Vec3f w0= camEyeCartesian-intersection[0];
-  Vec3f wh = Vec3f(w0 + wi );
+  Vec3f wi = intersection.ptIntersection - lightPos ;
+  Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
+  Vec3f wh = Vec3f(w0 + wi);
 
-    float alphaP = 0.01;
+    float alphaP = 0.01f;
     // GGX
-    float GGGX1 = (dot(intersection[1],wi)*2)/(dot(intersection[1],wi)+sqrt(pow(alphaP,2)+(1-pow(alphaP,2))*(pow(dot(intersection[1],wi),2))))  ;
-    float GGGX2 = (dot(intersection[1],w0)*2)/(dot(intersection[1],w0)+sqrt(pow(alphaP,2)+(1-pow(alphaP,2))*(pow(dot(intersection[1],w0),2))))  ;
+    float GGGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
+    float GGGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
     float GGGX = GGGX1*GGGX2 ;
 
-    float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection[1],wh),2),2)) ;
+    float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection.normal,wh),2),2)) ;
 
-    float F0 = 0.04 ;
-	  float zero = 0.0 ;
-	  float Fresnel = F0 + (1-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
+    float F0 = 0.04f ;
+	  float zero = 0.0f ;
+	  float Fresnel = F0 + (1.f-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
 
-    Vec3f fs_GGX = (DGGX*Fresnel*GGGX)/(dot(intersection[1],wi)*dot(intersection[1],w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
+    Vec3f fs_GGX = (DGGX*Fresnel*GGGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
   //  Vec3f fd = Vec/ 3.14;
     Vec3f f = fs_GGX;
 
-  Vec3f color = lightColor*dot(intersection[1],wi)*f ; //on multipliera par la réflectance dans rayTrace()
+  Vec3f color = lightColor*dot(intersection.normal,wi)*f ; //on multipliera par la réflectance dans rayTrace()
   return color ;
 }
 
@@ -268,11 +268,10 @@ void displayRayImage () {
   glEnable (GL_DEPTH_TEST);
 }
 
-vector<Vec3f> raySceneIntersection(Ray ray) {
+Intersection raySceneIntersection(Ray ray) {
   //chaque intersection est suivie de sa normale dans la liste;
-	vector<Vec3f> listeIntersections ;
-  listeIntersections.resize(10000000);
-	vector<float> listeDistances;
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
+  float distanceMin = 100000.f;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
 		//on tourne sur les triangles
@@ -287,41 +286,24 @@ vector<Vec3f> raySceneIntersection(Ray ray) {
 				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
 				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
 				//intersection est composée de la reelle intersection et de sa normale associée au triangle
-				vector<Vec3f> intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
+				Intersection intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
 
-				//on separe l'intersection meme et la normale
-				Vec3f ptIntersection = intersection[0];
-				Vec3f ptIntersectionNormale = intersection[1];
-
-				//on tient une liste des intersections du rayon avec la scene ainsi que les distances à la camera.
 				//on retournera celle dont la distance est minimale
-				if(ptIntersection != Vec3f(0.0f,0.0f,0.0f)) {
-					listeIntersections.push_back(ptIntersection);
-          listeIntersections.push_back(ptIntersectionNormale);
-					listeDistances.push_back(dist(ptIntersection, camEyeCartesian));
+				if(intersection.ptIntersection != camEyeCartesian) {
+          if(dist(intersection.ptIntersection,camEyeCartesian) < distanceMin)){
+            retour = intersection;
+          }
 				}
 			}
 		}
-	//calcul du min des distances
-	float d = 100000 ;
-	unsigned int indice = 0;
-	for(unsigned int i = 0; i<listeDistances.size(); i++) {
-		if (listeDistances[i] < d) {
-			d = listeDistances[i] ;
-			indice = i ;
-		}
-	}
-  vector<Vec3f> retour;
-  retour.resize(2);
-  retour.push_back(listeIntersections[2*indice]);
-  retour.push_back(listeIntersections[2*indice+1]);
+
 	return retour;
 }
 
-int calculOmbre(vector<Vec3f> intersection){
+int calculOmbre(Intersection intersection){
 
-    Ray rayon = Ray(intersection[0]+0.0001f*intersection[1],lightPos);
-  if( ! raySceneIntersection(rayon).empty() ) {
+    Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
+  if( raySceneIntersection(rayon).ptIntersection !=  camEyeCartesian ) {
     return 0;
   }
     else return 1;
@@ -348,8 +330,7 @@ void rayTrace () {
 	    unsigned int index = 3*(i+j*screenWidth);
       Vec3f positionPixel = positionDepart + Du*i+Dv*j;
       Ray rayon = Ray(camEyeCartesian, positionPixel) ;
-      vector<Vec3f> intersection = raySceneIntersection(rayon) ;
-      intersection.resize(2);
+      Intersection intersection = raySceneIntersection(rayon) ;
 
       int val = calculOmbre(intersection);
 
