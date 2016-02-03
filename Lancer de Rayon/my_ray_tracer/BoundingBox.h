@@ -1,7 +1,6 @@
 #include <cmath>
 #include <vector>
 #include "Vec3.h"
-#include "KdNode.h"
 #include "tiny_obj_loader.h"
 
 using namespace std;
@@ -20,36 +19,36 @@ class BoundingBox {
   BoundingBox(float xMin, float xMax,float yMin, float yMax,float zMin, float zMax ) ;
   virtual ~BoundingBox() {}
 
-  float getXMin (BoundingBox boundingBox) {
-    return boundingBox.xMin ;
+  float getXMin () {
+    return this->xMin ;
   }
-  float getXMax (BoundingBox boundingBox) {
-    return boundingBox.xMax ;
+  float getXMax () {
+    return this->xMax ;
   }
-  float getYMin (BoundingBox boundingBox) {
-    return boundingBox.yMin ;
+  float getYMin () {
+    return this->yMin ;
   }
-  float getYMax (BoundingBox boundingBox) {
-    return boundingBox.yMax ;
+  float getYMax () {
+    return this->yMax ;
   }
-  float getZMin (BoundingBox boundingBox) {
-    return boundingBox.zMin ;
+  float getZMin () {
+    return this->zMin ;
   }
-  float getZMax (BoundingBox boundingBox) {
-    return boundingBox.zMax ;
+  float getZMax () {
+    return this->zMax ;
   }
 
-  char BoundingBox::maxAxis(BoundingBox boundingBox) ;
+  char maxAxis() ;
 
 } ;
 
-char BoundingBox::maxAxis(BoundingBox boundingBox) {
-  float xMin = boundingBox.getXMin(boundingBox);
-  float xMax = boundingBox.getXMax(boundingBox);
-  float yMin = boundingBox.getYMin(boundingBox);
-  float yMax = boundingBox.getYMax(boundingBox);
-  float zMin = boundingBox.getZMin(boundingBox);
-  float zMax = boundingBox.getZMax(boundingBox);
+char BoundingBox::maxAxis() {
+  float xMin = this->getXMin();
+  float xMax = this->getXMax();
+  float yMin = this->getYMin();
+  float yMax = this->getYMax();
+  float zMin = this->getZMin();
+  float zMax = this->getZMax();
 
   float distX = xMax - xMin;
   float distY = yMax - yMin;
@@ -59,13 +58,16 @@ char BoundingBox::maxAxis(BoundingBox boundingBox) {
   float tmp = max(distX,distY);
   float axis = max(tmp,distZ);
 
-  if (axis = distX) {
+  if (axis == distX) {
     return 'x' ;
   }
-  if (axis = distY) {
+  if (axis == distY) {
     return 'y' ;
   }
-  if (axis = distZ) {
+  if (axis == distZ) {
     return 'z' ;
   }
+
+    return 'o' ;
+
 }
