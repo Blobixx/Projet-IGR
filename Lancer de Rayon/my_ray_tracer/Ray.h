@@ -4,7 +4,7 @@
 #include <vector>
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
-#include "Intersection"
+#include "Intersection.h"
 
 using namespace std;
 

@@ -2,7 +2,8 @@
 
 
 class Intersection {
-  public
+
+public:
 
     Vec3f ptIntersection;
     Vec3f normal;
@@ -15,4 +16,4 @@ class Intersection {
       this->normal = normal;
     }
 
-}
+};
