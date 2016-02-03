@@ -41,7 +41,7 @@ Intersection Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float a = dot(e0,q) ;
 
 	if ( (dot(normale,direction)>=0) ) {
-		return  intersection;
+		return  intersection; 
 	}
 
 	Vec3f s = (origin - p0)/a ;
