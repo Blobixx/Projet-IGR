@@ -16,7 +16,14 @@ class BoundingBox {
   float zMax ;
 
   BoundingBox() ;
-  BoundingBox(float xMin, float xMax,float yMin, float yMax,float zMin, float zMax ) ;
+  BoundingBox(float xMin, float xMax,float yMin, float yMax,float zMin, float zMax ){
+    this->xMin=xMin;
+    this->xMax=xMax;
+    this->yMin=yMin;
+    this->yMax=yMax;
+    this->zMin=zMin;
+    this->zMax=zMax ;
+  }
   virtual ~BoundingBox() {}
 
   float getXMin () {

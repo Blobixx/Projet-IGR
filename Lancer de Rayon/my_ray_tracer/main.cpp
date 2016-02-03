@@ -84,6 +84,7 @@ void initOpenGL () {
   glClearColor (0.0f, 0.0f, 0.0f, 1.0f); // Background color
   glEnable (GL_COLOR_MATERIAL);
 }
+
 int calculTailleTotalDePoints(){
   unsigned int taille=0;
   for (unsigned int s = 0; s < shapes.size (); s++){
@@ -94,6 +95,7 @@ int calculTailleTotalDePoints(){
 
    return taille;
 }
+
 Vec3f evaluateResponse(Intersection intersection) {
 
   Vec3f wi = intersection.ptIntersection - lightPos ;
@@ -120,10 +122,11 @@ Vec3f evaluateResponse(Intersection intersection) {
   return color ;
 }
 
-vector<float> createListPointOrigine() {
+vector<float> createListPointOrigine(){
+
 vector<float> pointList;
 unsigned int taille=calculTailleTotalDePoints();
- pointList.resize(taille) ;
+ pointList.resize(taille);
  unsigned int i=0;
   for (unsigned int s = 0; s < shapes.size (); s++){
      for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
@@ -132,10 +135,9 @@ unsigned int taille=calculTailleTotalDePoints();
        pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
        pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
        i=i+3;
-       }
      }
-       return pointList ;
-
+  }
+  return pointList ;
 }
 
 BoundingBox computeBoundingBox(vector<float> pointList) {
@@ -146,10 +148,23 @@ BoundingBox computeBoundingBox(vector<float> pointList) {
   float zMin = 10000.f;
   float zMax = -10000.f;
 
-  for(unsigned i =0; i<pointList.size();i++ ){
-
+  for(unsigned i =0; i<pointList.size();i+=3 ){
+    if(pointList[i]<xMin){ xMin=pointList[i];}
+    if(pointList[i]>xMax){ xMax=pointList[i];}
 
   }
+  for(unsigned i =1; i<pointList.size();i+=3 ){
+    if(pointList[i]<yMin){ yMin=pointList[i];}
+    if(pointList[i]>yMax){ yMax=pointList[i];}
+
+  }
+  for(unsigned i =2; i<pointList.size();i+=3 ){
+    if(pointList[i]<zMin){ zMin=pointList[i];}
+    if(pointList[i]>zMax){ zMax=pointList[i];}
+
+  }
+  BoundingBox boundingBox = BoundingBox(xMin, xMax,yMin,yMax,zMin,zMax);
+  return boundingBox;
 }
 
 vector<float> TriSelection(vector<float> liste,unsigned int n) {

@@ -11,7 +11,6 @@ using namespace std;
 static Vec3f camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
 static Vec3f camEyeCartesian = polarToCartesian(camEyePolar) ;
 
-
 class Ray {
 
 public:
