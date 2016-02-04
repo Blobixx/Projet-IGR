@@ -23,8 +23,8 @@
 using namespace std;
 
 // App parameters
-static const unsigned int DEFAULT_SCREENWIDTH = 1024;
-static const unsigned int DEFAULT_SCREENHEIGHT = 768;
+static const unsigned int DEFAULT_SCREENWIDTH = 300;
+static const unsigned int DEFAULT_SCREENHEIGHT = 300;
 static const char * DEFAULT_SCENE_FILENAME = "scenes/cornell_box/cornell_box.obj";
 static string appTitle ("MCRT - Monte Carlo Ray Tracer");
 static GLint window;
@@ -33,12 +33,12 @@ static float Pi = 3.14159265359;
 
 // Camera parameters
 static float fovAngle = 45.f ;
-static float aspectRatio = 1024/768;
+static float aspectRatio = float(DEFAULT_SCREENWIDTH) / float(DEFAULT_SCREENHEIGHT);
 static float nearPlane;
 static float farPlane;
 static Vec3f camTarget;
 static Vec3f camUp = Vec3f(0.0f,1.0f,0.0f);
- // Expressing the camera position in polar coordinate, in the frame of the target
+// Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
 static Vec3f lightPos = Vec3f (1.f, 1.f, 1.f);
@@ -53,8 +53,9 @@ static bool mouseLeftButtonClicked = false;
 static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
-static Vec3f directionU = cross(camTarget-camEyeCartesian, camUp) ;
-static Vec3f directionV = cross(camTarget-camEyeCartesian, directionU ) ;
+
+static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.0f, M_PI/2.f);
+static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
 
 // Raytraced image
 static unsigned char * rayImage = NULL;
@@ -90,12 +91,12 @@ void initOpenGL () {
 int calculTailleTotalDePoints(){
   unsigned int taille=0;
   for (unsigned int s = 0; s < shapes.size (); s++){
-     for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-       taille++;
-     }
-   }
+	for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+	  taille++;
+	}
+  }
 
-   return taille;
+  return taille;
 }
 
 //retourne la liste de tous les points de la scene
@@ -105,13 +106,13 @@ vector<float> getListOfAllPoints(){
   pointList.resize(taille);
   unsigned int i=0;
   for (unsigned int s = 0; s < shapes.size (); s++){
-     for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
+	for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
 
-       pointList[i]=shapes[s].mesh.positions[3*p] ;
-       pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
-       pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
-       i=i+3;
-     }
+	  pointList[i]=shapes[s].mesh.positions[3*p] ;
+	  pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
+	  pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
+	  i=i+3;
+	}
   }
   return pointList ;
 }
@@ -152,21 +153,21 @@ Vec3f evaluateResponse(Intersection intersection) {
   return color ;
 
 
-    /*float alphaP = 0.01f;
-    // GGX
-    float GGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
-    float GGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
-    float GGX = GGX1*GGX2 ;
-    cout<<"GGX="<<GGX<<endl;
-    float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection.normal,wh),2),2)) ;
+  /*float alphaP = 0.01f;
+  // GGX
+  float GGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
+  float GGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
+  float GGX = GGX1*GGX2 ;
+  cout<<"GGX="<<GGX<<endl;
+  float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection.normal,wh),2),2)) ;
 
-    float F0 = 0.04f ;
-	  float zero = 0.0f ;
-	  float Fresnel = F0 + (1.f-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
+  float F0 = 0.04f ;
+  float zero = 0.0f ;
+  float Fresnel = F0 + (1.f-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
 
-    Vec3f fs_GGX = (DGGX*Fresnel*GGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
+  Vec3f fs_GGX = (DGGX*Fresnel*GGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
   //  Vec3f fd = Vec/ 3.14;
-    Vec3f f = fs_GGX;*/
+  Vec3f f = fs_GGX;*/
 
 }
 
@@ -200,14 +201,14 @@ BoundingBox computeBoundingBox(vector<float> pointList) {
 
 //algorithme de TriSelection
 vector<float> TriSelection(vector<float> liste,unsigned int n) {
-	for(unsigned int i=0 ; i < n ; i++) {				//on parcourt le tableau
-		unsigned int p = i ;
-		for( unsigned int j = i ; j < n ; j++) {			//on cherche la position p du plus petit élément
-			if(liste[j] < liste[p] ) {
+  for(unsigned int i=0 ; i < n ; i++) {				//on parcourt le tableau
+	unsigned int p = i ;
+	for( unsigned int j = i ; j < n ; j++) {			//on cherche la position p du plus petit élément
+	  if(liste[j] < liste[p] ) {
         p=j;
       }
-			//resultat.nbComparaisons++;	//comptage des opérations
-		}
+	  //resultat.nbComparaisons++;	//comptage des opérations
+	}
 	float c = liste[i] ;						//on échange
 	liste[i] = liste[p] ;					//les deux
 	liste[p] = c ;						//nombres
@@ -260,88 +261,88 @@ float findMedianSample(BoundingBox boundingBox, vector<float> pointList) {
 //partie superieur selon le point median
 vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
 
-    vector<float> upperPartition ;
-    upperPartition.resize(listPoint.size()) ;
-    unsigned int indice =0;
-    if (axeMax == 'x') {
-      for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] > val ) {
-          upperPartition[indice]=listPoint[j];
-          upperPartition[indice+1]=listPoint[j+1];
-          upperPartition[indice+2]=listPoint[j+2];
-          indice+=3;
+  vector<float> upperPartition ;
+  upperPartition.resize(listPoint.size()) ;
+  unsigned int indice =0;
+  if (axeMax == 'x') {
+	for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] > val ) {
+		upperPartition[indice]=listPoint[j];
+		upperPartition[indice+1]=listPoint[j+1];
+		upperPartition[indice+2]=listPoint[j+2];
+		indice+=3;
 
-        }
-      }
-    }
-    if (axeMax == 'y') {
-      for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] > val ) {
-          upperPartition[indice]=listPoint[j-1];
-          upperPartition[indice+1]=listPoint[j];
-          upperPartition[indice+2]=listPoint[j+1];
-          indice+=3;
+	  }
+	}
+  }
+  if (axeMax == 'y') {
+	for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] > val ) {
+		upperPartition[indice]=listPoint[j-1];
+		upperPartition[indice+1]=listPoint[j];
+		upperPartition[indice+2]=listPoint[j+1];
+		indice+=3;
 
-        }
-      }
-    }
-    if (axeMax == 'z') {
-      for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] > val ) {
-          upperPartition[indice]=listPoint[j-2];
-          upperPartition[indice+1]=listPoint[j-1];
-          upperPartition[indice+2]=listPoint[j];
-          indice+=3;
+	  }
+	}
+  }
+  if (axeMax == 'z') {
+	for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] > val ) {
+		upperPartition[indice]=listPoint[j-2];
+		upperPartition[indice+1]=listPoint[j-1];
+		upperPartition[indice+2]=listPoint[j];
+		indice+=3;
 
-        }
-      }
-    }
+	  }
+	}
+  }
 
-    return upperPartition ;
+  return upperPartition ;
 }
 
 //partie  inferieure
 vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
 
-    vector<float> lowerPartition ;
-    lowerPartition.resize(listPoint.size()) ;
-    unsigned int indice =0;
+  vector<float> lowerPartition ;
+  lowerPartition.resize(listPoint.size()) ;
+  unsigned int indice =0;
 
-    if (axeMax == 'x') {
-      for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] < val ) {
-          lowerPartition[indice]=listPoint[j];
-          lowerPartition[indice+1]=listPoint[j+1];
-          lowerPartition[indice+2]=listPoint[j+2];
-          indice+=3;
+  if (axeMax == 'x') {
+	for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] < val ) {
+		lowerPartition[indice]=listPoint[j];
+		lowerPartition[indice+1]=listPoint[j+1];
+		lowerPartition[indice+2]=listPoint[j+2];
+		indice+=3;
 
-        }
-      }
-    }
-    if (axeMax == 'y') {
-      for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] < val ) {
-          lowerPartition[indice]=listPoint[j-1];
-          lowerPartition[indice+1]=listPoint[j];
-          lowerPartition[indice+2]=listPoint[j+1];
-          indice+=3;
+	  }
+	}
+  }
+  if (axeMax == 'y') {
+	for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] < val ) {
+		lowerPartition[indice]=listPoint[j-1];
+		lowerPartition[indice+1]=listPoint[j];
+		lowerPartition[indice+2]=listPoint[j+1];
+		indice+=3;
 
-        }
-      }
-    }
-    if (axeMax == 'z') {
-      for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
-        if(listPoint[j] < val ) {
-          lowerPartition[indice]=listPoint[j-2];
-          lowerPartition[indice+1]=listPoint[j-1];
-          lowerPartition[indice+2]=listPoint[j];
-          indice+=3;
+	  }
+	}
+  }
+  if (axeMax == 'z') {
+	for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
+	  if(listPoint[j] < val ) {
+		lowerPartition[indice]=listPoint[j-2];
+		lowerPartition[indice+1]=listPoint[j-1];
+		lowerPartition[indice+2]=listPoint[j];
+		indice+=3;
 
-        }
-      }
-    }
+	  }
+	}
+  }
 
-    return lowerPartition ;
+  return lowerPartition ;
 }
 
 Intersection raySceneIntersection(Ray ray) {
@@ -349,43 +350,43 @@ Intersection raySceneIntersection(Ray ray) {
   Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
   float distanceMin = 1000000.f;
 
-	for (unsigned int s = 0; s < shapes.size (); s++) {
-		//on tourne sur les triangles
-		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
-			//pour chaque triangle
-				//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
-				unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
-				unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
-				unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
+  for (unsigned int s = 0; s < shapes.size (); s++) {
+	//on tourne sur les triangles
+	for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+	  //pour chaque triangle
+	  //on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
+	  unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
+	  unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
+	  unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
 
-				//j'ai les 3 vertices de mon triangle
-				Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
-				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
-				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
-				//intersection est composée de la reelle intersection et de sa normale associée au triangle
-				Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
+	  //j'ai les 3 vertices de mon triangle
+	  Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
+	  Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
+	  Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
+	  //intersection est composée de la reelle intersection et de sa normale associée au triangle
+	  Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
 
-				//on retournera celle dont la distance est minimale
-        float d = dist(intersection.ptIntersection, camEyeCartesian);
-				if(intersection.ptIntersection != camEyeCartesian) {
-          if(  d < distanceMin){
-            distanceMin = d;
-            retour = Intersection(intersection.ptIntersection, intersection.normal);
-          }
-				}
-
-			}
+	  //on retournera celle dont la distance est minimale
+	  float d = dist(intersection.ptIntersection, camEyeCartesian);
+	  if(intersection.ptIntersection != camEyeCartesian) {
+		if(  d < distanceMin){
+		  distanceMin = d;
+		  retour = Intersection(intersection.ptIntersection, intersection.normal);
 		}
-	return retour;
+	  }
+
+	}
+  }
+  return retour;
 }
 
 int calculOmbre(Intersection intersection){
 
-    Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
+  Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
   if( raySceneIntersection(rayon).ptIntersection !=  camEyeCartesian ) {
     return 0;
   }
-    else return 1;
+  else return 1;
 
 }
 
@@ -431,6 +432,18 @@ void computeSceneBoundingSphere () {
 	  count++;
 	}
   sceneCenter /= count;
+
+  for (unsigned int s = 0; s < shapes.size (); s++)
+	{
+	for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++)
+	  {
+	  shapes[s].mesh.positions[3*p] -= sceneCenter[0];
+      shapes[s].mesh.positions[3*p+1] -= sceneCenter[1];
+	  shapes[s].mesh.positions[3*p+2] -= sceneCenter[2];
+	  }
+	}
+  sceneCenter = Vec3f (0.f, 0.f, 0.f);
+
   sceneRadius = 0.f;
   for (unsigned int s = 0; s < shapes.size (); s++)
     for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
@@ -491,6 +504,9 @@ void setupCamera () {
   Vec3f eye = polarToCartesian (camEyePolar);
   swap (eye[1], eye[2]); // swap Y and Z to keep the Y vertical
   eye += camTarget;
+
+  camEyeCartesian = eye;
+
   gluLookAt (eye[0], eye[1], eye[2],
 			 camTarget[0], camTarget[1], camTarget[2],
 			 0.0, 1.0, 0.0); // Set up the current modelview matrix with camera transform
@@ -506,7 +522,7 @@ void reshape (int w, int h) {
 	delete [] rayImage;
   unsigned int l = 3*DEFAULT_SCREENWIDTH*DEFAULT_SCREENHEIGHT;
   rayImage = new unsigned char [l];
-  memset (rayImage, 0, l);
+  memset (rayImage, 177, l);
 }
 
 void rasterize () {
@@ -519,7 +535,7 @@ void rasterize () {
 	  if (!materials.empty ()) {
 		unsigned int i = shapes[s].mesh.material_ids[f];
 		glColor3f (materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
-  }
+	  }
 	  for (size_t v = 0; v  < 3; v++) {
 		unsigned int index = 3*shapes[s].mesh.indices[3*f+v];
 		glNormal3f (shapes[s].mesh.normals[index],
@@ -530,7 +546,7 @@ void rasterize () {
 					shapes[s].mesh.positions[index+2]);
 	  }
 	}
-	glEnd ();
+  glEnd ();
   glFlush (); // Ensures any previous OpenGL call has been executed
   glutSwapBuffers ();  // swap the render buffer and the displayed (screen) one
 }
@@ -543,38 +559,53 @@ void displayRayImage () {
 }
 
 void rayTrace () {
+
+
+  Vec3f directionU = cross(camTarget-camEyeCartesian, camUp) ;
+  Vec3f directionV = cross(camEyeCartesian - camTarget, directionU ) ;
+
   //Direction dans la quelle regarde la camera
   Vec3f d = camTarget - camEyeCartesian;
   // Repere de l'image norme
   directionU.normalize() ;
   directionV.normalize() ;
   // Calcul de la largeur et de la longueur de l'image centree en camTarget
-  float h = 2*d.length()*tan(fovAngle/2) ;
+  float h = 2*d.length()*tan(fovAngle * Pi / 360.0) ;
   float w = aspectRatio*h ;
   // Calcul des pas de parcours de l'image
-  Vec3f Dv =  directionU*(h/DEFAULT_SCREENHEIGHT) ;
-  Vec3f Du = directionV*(w/DEFAULT_SCREENWIDTH) ;
+  Vec3f Dv =  directionV*(h/(DEFAULT_SCREENHEIGHT - 1));
+  Vec3f Du = directionU*(w/(DEFAULT_SCREENWIDTH - 1));
 
   // Calcul de la position du pixel P(0,0)
-  Vec3f positionDepart = camTarget - Du*(w/2) + Dv*(h/2);
+  Vec3f positionDepart = camTarget - directionV * h / 2.0f - directionU * w / 2.0f;
   // Debut de la boucle de remplissage de l'image
-  for (unsigned int i = 0; i < w; i++) {
-	  for (unsigned int  j = 0; j < h; j++) {
+  for (unsigned int i = 0; i < DEFAULT_SCREENWIDTH; i++) {
+	for (unsigned int  j = 0; j < DEFAULT_SCREENHEIGHT; j++) {
 
       // Calcul de la couleur du pixel
-	    unsigned int index = 3*(i+j*w);
-      Vec3f positionPixel = positionDepart + Du*i+Dv*j;
+	  unsigned int index = 3*(i+j*DEFAULT_SCREENWIDTH);
+	  Vec3f positionPixel = positionDepart + Du*i+Dv*j;
+
+
+
       Ray rayon = Ray(camEyeCartesian, positionPixel-camEyeCartesian) ;
       Intersection intersection = raySceneIntersection(rayon) ;
-      int val = calculOmbre(intersection);
-      Vec3f pixelColor = evaluateResponse(intersection) * val;
-    //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
+      // int val = calculOmbre(intersection);
 
-      rayImage[index] = pixelColor[0] ;
-      rayImage[index+1] = pixelColor[1] ;
-      rayImage[index+2] = pixelColor[2];
-	    }
-    }
+       //Vec3f pixelColor = evaluateResponse(intersection);// * val;
+      Vec3f pixelColor = intersection.normal.length() > 0.0000001f ? Vec3f(1.0f) : Vec3f(0.1f) ;// * val;
+
+	  //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
+      rayImage[index] = 0; // pixelColor[0] * 255;
+      rayImage[index+1] = pixelColor[1] * 255;
+      rayImage[index+2] = 0; // pixelColor[2] * 255;
+      /*rayImage[index] = pixelColor[0] * 255; // pixelColor[0] * 255;
+      rayImage[index+1] = pixelColor[1] * 255;
+      rayImage[index+2] = pixelColor[2] * 255;*/
+
+	}
+  }
+
 }
 
 void display () {
