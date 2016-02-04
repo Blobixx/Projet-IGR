@@ -36,7 +36,7 @@ Intersection Ray::rayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	normale.normalize() ;
 	Vec3f q = cross( direction, e1) ;
 	float a = dot(e0,q) ;
-	if ( dot(normale,direction)>=0 || fabs(a)<0.01f) {
+	if ( dot(normale,direction)>=0 || fabs(a)<0.000000001f) {
 		return  intersection;
 	}
 

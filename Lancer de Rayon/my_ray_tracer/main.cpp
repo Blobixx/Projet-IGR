@@ -368,7 +368,7 @@ Intersection raySceneIntersection(Ray ray) {
 
 	  //on retournera celle dont la distance est minimale
 	  float d = dist(intersection.ptIntersection, camEyeCartesian);
-	  if(intersection.ptIntersection != camEyeCartesian) {
+	  if(intersection.intersect) {
 		if(  d < distanceMin){
 		  distanceMin = d;
 		  retour = Intersection(intersection.ptIntersection, intersection.normal);
