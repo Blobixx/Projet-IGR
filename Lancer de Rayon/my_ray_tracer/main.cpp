@@ -53,8 +53,8 @@ static bool mouseLeftButtonClicked = false;
 static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
-static Vec3f directionU = cross(camEyeCartesian-camTarget, camUp) ;
-static Vec3f directionV = cross(-directionU, camEyeCartesian-camTarget) ;
+static Vec3f directionU = cross(camTarget-camEyeCartesian, camUp) ;
+static Vec3f directionV = cross(camTarget-camEyeCartesian, directionU ) ;
 
 // Raytraced image
 static unsigned char * rayImage = NULL;
@@ -344,6 +344,51 @@ vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
     return lowerPartition ;
 }
 
+Intersection raySceneIntersection(Ray ray) {
+  //chaque intersection est suivie de sa normale dans la liste;
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
+  float distanceMin = 1000000.f;
+
+	for (unsigned int s = 0; s < shapes.size (); s++) {
+		//on tourne sur les triangles
+		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+			//pour chaque triangle
+				//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
+				unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
+				unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
+				unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
+
+				//j'ai les 3 vertices de mon triangle
+				Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
+				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
+				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
+				//intersection est composée de la reelle intersection et de sa normale associée au triangle
+				Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
+
+				//on retournera celle dont la distance est minimale
+        float d = dist(intersection.ptIntersection, camEyeCartesian);
+				if(intersection.ptIntersection != camEyeCartesian) {
+          if(  d < distanceMin){
+            distanceMin = d;
+            retour = Intersection(intersection.ptIntersection, intersection.normal);
+          }
+				}
+
+			}
+		}
+	return retour;
+}
+
+int calculOmbre(Intersection intersection){
+
+    Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
+  if( raySceneIntersection(rayon).ptIntersection !=  camEyeCartesian ) {
+    return 0;
+  }
+    else return 1;
+
+}
+
 void computeSceneNormals () {
   for (unsigned int s = 0; s < shapes.size (); s++)
 	if (shapes[s].mesh.normals.empty ()) {
@@ -497,51 +542,6 @@ void displayRayImage () {
   glEnable (GL_DEPTH_TEST);
 }
 
-Intersection raySceneIntersection(Ray ray) {
-  //chaque intersection est suivie de sa normale dans la liste;
-  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
-  float distanceMin = 1000000.f;
-
-	for (unsigned int s = 0; s < shapes.size (); s++) {
-		//on tourne sur les triangles
-		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
-			//pour chaque triangle
-				//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
-				unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
-				unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
-				unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
-				//j'ai les 3 vertices de mon triangle
-				Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
-				Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
-				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
-				//intersection est composée de la reelle intersection et de sa normale associée au triangle
-				Intersection intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
-        cout<<intersection.ptIntersection<<endl;
-
-				//on retournera celle dont la distance est minimale
-        float d = dist(intersection.ptIntersection,camEyeCartesian);
-				if(intersection.ptIntersection != camEyeCartesian) {
-          if(  d< distanceMin){
-            distanceMin = d;
-            retour.ptIntersection = intersection.ptIntersection;
-            retour.normal = intersection.normal;
-          }
-				}
-			}
-		}
-	return retour;
-}
-
-int calculOmbre(Intersection intersection){
-
-    Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
-  if( raySceneIntersection(rayon).ptIntersection !=  camEyeCartesian ) {
-    return 0;
-  }
-    else return 1;
-
-}
-
 void rayTrace () {
   //Direction dans la quelle regarde la camera
   Vec3f d = camTarget - camEyeCartesian;
@@ -552,19 +552,19 @@ void rayTrace () {
   float h = 2*d.length()*tan(fovAngle/2) ;
   float w = aspectRatio*h ;
   // Calcul des pas de parcours de l'image
-  Vec3f Dv =  (h/screenHeight)*directionU ;
-  Vec3f Du = (w/screenWidth)*directionV ;
+  Vec3f Dv =  directionU*(h/DEFAULT_SCREENHEIGHT) ;
+  Vec3f Du = directionV*(w/DEFAULT_SCREENWIDTH) ;
 
   // Calcul de la position du pixel P(0,0)
-  Vec3f positionDepart = camTarget - (w/2)*Vec3f(1.0f,0.0f,0.0f) + (h/2)*Vec3f(0.0f,1.0f,0.0f);
+  Vec3f positionDepart = camTarget - Du*(w/2) + Dv*(h/2);
   // Debut de la boucle de remplissage de l'image
-  for (unsigned int i = 0; i < DEFAULT_SCREENWIDTH; i++) {
-	  for (unsigned int  j = 0; j < DEFAULT_SCREENHEIGHT; j++) {
+  for (unsigned int i = 0; i < w; i++) {
+	  for (unsigned int  j = 0; j < h; j++) {
 
       // Calcul de la couleur du pixel
-	    unsigned int index = 3*(i+j*DEFAULT_SCREENWIDTH);
+	    unsigned int index = 3*(i+j*w);
       Vec3f positionPixel = positionDepart + Du*i+Dv*j;
-      Ray rayon = Ray(camEyeCartesian, positionPixel) ;
+      Ray rayon = Ray(camEyeCartesian, positionPixel-camEyeCartesian) ;
       Intersection intersection = raySceneIntersection(rayon) ;
       int val = calculOmbre(intersection);
       Vec3f pixelColor = evaluateResponse(intersection) * val;

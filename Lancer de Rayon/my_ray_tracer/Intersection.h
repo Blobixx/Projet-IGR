@@ -12,6 +12,5 @@ public:
       this->ptIntersection = ptIntersection;
       this->normal = normal;
     }
-
-
+    
 };
