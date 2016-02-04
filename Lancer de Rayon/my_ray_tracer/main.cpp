@@ -28,9 +28,8 @@ static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static const char * DEFAULT_SCENE_FILENAME = "scenes/cornell_box/cornell_box.obj";
 static string appTitle ("MCRT - Monte Carlo Ray Tracer");
 static GLint window;
-static unsigned int screenWidth = 1024;
-static unsigned int screenHeight = 768;
 static bool rayDisplayMode = false;
+static float Pi = 3.14159265359;
 
 // Camera parameters
 static float fovAngle = 45.f ;
@@ -118,28 +117,55 @@ vector<float> getListOfAllPoints(){
 //rendvoie la couleur
 Vec3f evaluateResponse(Intersection intersection) {
 
-  Vec3f wi = intersection.ptIntersection - lightPos ;
+  Vec3f wi = intersection.ptIntersection - lightPos;
   Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
   Vec3f wh = Vec3f(w0 + wi);
+  Vec3f n = Vec3f(intersection.normal);
+  wi.normalize();
+  w0.normalize();
+  wh.normalize();
+  n.normalize();
 
-    float alphaP = 0.01f;
+  float norwh = dot(n,wh);
+  float norw0 = dot(n,w0);
+  float norwi = max(0.0f, dot(n,wi));
+
+  float fd = 1/Pi;
+  float alphaP = 0.01f;
+  float alpha = 0.01f;
+  float zero = 0.f;
+
+  float D = pow(alphaP,2)/(    Pi*pow( 1.f+(pow(alphaP,2)-1.f)*pow(norwh,2) ,2) );
+  float F = 0.02f + (1.f-0.022f)*pow(  1.f-max(zero,dot(wi,wh))  ,5);
+  float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
+  float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2)));
+  float G = G01*G02;
+
+  float fs = D*F*G/(4*norwh*norw0);
+
+  float f = fd+fs;
+  Vec3f L0 = lightColor*f*norwi;
+
+  Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
+  return color ;
+
+
+    /*float alphaP = 0.01f;
     // GGX
-    float GGGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
-    float GGGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
-    float GGGX = GGGX1*GGGX2 ;
-
+    float GGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
+    float GGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
+    float GGX = GGX1*GGX2 ;
+    cout<<"GGX="<<GGX<<endl;
     float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection.normal,wh),2),2)) ;
 
     float F0 = 0.04f ;
 	  float zero = 0.0f ;
 	  float Fresnel = F0 + (1.f-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
 
-    Vec3f fs_GGX = (DGGX*Fresnel*GGGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
+    Vec3f fs_GGX = (DGGX*Fresnel*GGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
   //  Vec3f fd = Vec/ 3.14;
-    Vec3f f = fs_GGX;
+    Vec3f f = fs_GGX;*/
 
-  Vec3f color = lightColor*dot(intersection.normal,wi)*f ; //on multipliera par la réflectance dans rayTrace()
-  return color ;
 }
 
 
@@ -425,14 +451,14 @@ void setupCamera () {
 }
 
 void reshape (int w, int h) {
-  screenWidth = w;
-  screenHeight = h;
+  //DEFAULT_SCREENWIDTH = w;
+  //DEFAULT_SCREENHEIGHT = h;
   aspectRatio = static_cast<float>(w)/static_cast<float>(h);
   glViewport (0, 0, (GLint)w, (GLint)h); // Dimension of the drawing region in the window
   setupCamera ();
   if (rayImage != NULL)
 	delete [] rayImage;
-  unsigned int l = 3*screenWidth*screenHeight;
+  unsigned int l = 3*DEFAULT_SCREENWIDTH*DEFAULT_SCREENHEIGHT;
   rayImage = new unsigned char [l];
   memset (rayImage, 0, l);
 }
@@ -465,7 +491,7 @@ void rasterize () {
 
 void displayRayImage () {
   glDisable (GL_DEPTH_TEST);
-  glDrawPixels (screenWidth, screenHeight, GL_RGB, GL_UNSIGNED_BYTE, static_cast<void*>(rayImage));
+  glDrawPixels (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT, GL_RGB, GL_UNSIGNED_BYTE, static_cast<void*>(rayImage));
   glutSwapBuffers ();
   glEnable (GL_DEPTH_TEST);
 }
@@ -473,7 +499,7 @@ void displayRayImage () {
 Intersection raySceneIntersection(Ray ray) {
   //chaque intersection est suivie de sa normale dans la liste;
   Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
-  float distanceMin = 100000.f;
+  float distanceMin = 1000000.f;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
 		//on tourne sur les triangles
@@ -489,17 +515,19 @@ Intersection raySceneIntersection(Ray ray) {
 				Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
 				//intersection est composée de la reelle intersection et de sa normale associée au triangle
 				Intersection intersection = ray.RayTriangleIntersection(vertex1, vertex2, vertex3);
+        cout<<intersection.ptIntersection<<endl;
 
 				//on retournera celle dont la distance est minimale
+        float d = dist(intersection.ptIntersection,camEyeCartesian);
 				if(intersection.ptIntersection != camEyeCartesian) {
-          float d = dist(intersection.ptIntersection,camEyeCartesian);
-          if( d < distanceMin){
-            retour = intersection;
+          if(  d< distanceMin){
+            distanceMin = d;
+            retour.ptIntersection = intersection.ptIntersection;
+            retour.normal = intersection.normal;
           }
 				}
 			}
 		}
-
 	return retour;
 }
 
@@ -517,33 +545,30 @@ void rayTrace () {
   //Direction dans la quelle regarde la camera
   Vec3f d = camTarget - camEyeCartesian;
   // Calcul de la largeur et de la longueur de l'image centree en camTarget
-  float h = 2*(d.length())*tan(fovAngle/2) ;
+  float h = 2*d.length()*tan(fovAngle/2) ;
   float w = aspectRatio*h ;
   // Calcul des pas de parcours de l'image
-  Vec3f Dv =  (h/screenHeight)*Vec3f(0.0f,1.0f,0.0f) ;
-  Vec3f Du = (w/screenWidth)*Vec3f(1.0f,0.0f,0.0f) ;
+  Vec3f Dv =  Vec3f(0.0f,1.0f,0.0f)*h/DEFAULT_SCREENHEIGHT ;
+  Vec3f Du = Vec3f(1.0f,0.0f,0.0f)*w/DEFAULT_SCREENWIDTH ;
   // Calcul de la position du pixel P(0,0)
-  Vec3f positionDepart = camTarget - (w/2)*Vec3f(1.0f,0.0f,0.0f) + (h/2)*Vec3f(0.0f,1.0f,0.0f);
-
+  Vec3f positionDepart = camTarget - Du*w/2 + Dv*h/2;
   // Debut de la boucle de remplissage de l'image
-  for (unsigned int i = 0; i < screenWidth; i++) {
-	  for (unsigned int  j = 0; j < screenHeight; j++) {
+  for (unsigned int i = 0; i < DEFAULT_SCREENWIDTH; i++) {
+	  for (unsigned int  j = 0; j < DEFAULT_SCREENHEIGHT; j++) {
 
       // Calcul de la couleur du pixel
-	    unsigned int index = 3*(i+j*screenWidth);
+	    unsigned int index = 3*(i+j*DEFAULT_SCREENWIDTH);
       Vec3f positionPixel = positionDepart + Du*i+Dv*j;
       Ray rayon = Ray(camEyeCartesian, positionPixel) ;
       Intersection intersection = raySceneIntersection(rayon) ;
-
       int val = calculOmbre(intersection);
-
       Vec3f pixelColor = evaluateResponse(intersection) * val;
     //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
-
 
       rayImage[index] = pixelColor[0] ;
       rayImage[index+1] = pixelColor[1] ;
       rayImage[index+2] = pixelColor[2];
+      cout<<"rayImage["<<index<<"]="<<rayImage[index]<<endl;
 	    }
     }
 }
@@ -559,9 +584,9 @@ void saveRayImage (const string & filename) {
   if (rayImage != NULL) {
 	std::ofstream out (filename.c_str ());
 	out << "P3" << endl
-		<< screenWidth << " " << screenHeight << endl
+		<< DEFAULT_SCREENWIDTH << " " << DEFAULT_SCREENHEIGHT << endl
 		<< "255" << endl;
-	for (unsigned int i = 0; i < 3*screenWidth*screenHeight; i++)
+	for (unsigned int i = 0; i < 3*DEFAULT_SCREENWIDTH*DEFAULT_SCREENHEIGHT; i++)
 	  out << static_cast<int>(rayImage[i]) << " ";
 	out.close ();
   }
@@ -606,8 +631,8 @@ void mouse (int button, int state, int x, int y) {
 
 void motion (int x, int y) {
   if (mouseLeftButtonClicked == true) {
-	camEyePolar[1] =  baseCamPhi  + (float (clickedY-y)/screenHeight) * M_PI;
-	camEyePolar[2] = baseCamTheta + (float (x-clickedX)/screenWidth) * M_PI;
+	camEyePolar[1] =  baseCamPhi  + (float (clickedY-y)/DEFAULT_SCREENHEIGHT) * M_PI;
+	camEyePolar[2] = baseCamTheta + (float (x-clickedX)/DEFAULT_SCREENWIDTH) * M_PI;
 	glutPostRedisplay (); // calls the display function
   }
 }
