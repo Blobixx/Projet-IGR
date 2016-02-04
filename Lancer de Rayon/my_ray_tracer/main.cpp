@@ -23,8 +23,8 @@
 using namespace std;
 
 // App parameters
-static const unsigned int DEFAULT_SCREENWIDTH = 300;
-static const unsigned int DEFAULT_SCREENHEIGHT = 300;
+static const unsigned int DEFAULT_SCREENWIDTH = 1024;
+static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static const char * DEFAULT_SCENE_FILENAME = "scenes/cornell_box/cornell_box.obj";
 static string appTitle ("MCRT - Monte Carlo Ray Tracer");
 static GLint window;
@@ -131,43 +131,24 @@ Vec3f evaluateResponse(Intersection intersection) {
 
   float norwh = dot(n,wh);
   float norw0 = dot(n,w0);
-  float norwi = max(0.0f, dot(n,wi));
+  float norwi = dot(n,wi);
 
-  float fd = 1/Pi;
-  float alphaP = 0.01f;
-  float alpha = 0.01f;
-  float zero = 0.f;
 
-  float D = pow(alphaP,2)/(    Pi*pow( 1.f+(pow(alphaP,2)-1.f)*pow(norwh,2) ,2) );
-  float F = 0.02f + (1.f-0.022f)*pow(  1.f-max(zero,dot(wi,wh))  ,5);
+  Vec3f fd = intersection.diffuse;
+  float alpha = sqrt(2/(intersection.shininess +2));
+
+  float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) );
+  float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
   float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
   float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2)));
   float G = G01*G02;
 
-  float fs = D*F*G/(4*norwh*norw0);
+  Vec3f fs = Vec3f(D*F*G/(4*norwh*norw0));
 
-  float f = fd+fs;
-  Vec3f L0 = lightColor*f*norwi;
+  Vec3f f = fd+fs;
 
   Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
   return color ;
-
-
-  /*float alphaP = 0.01f;
-  // GGX
-  float GGX1 = (dot(intersection.normal,wi)*2)/(dot(intersection.normal,wi)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,wi),2))))  ;
-  float GGX2 = (dot(intersection.normal,w0)*2)/(dot(intersection.normal,w0)+sqrt(pow(alphaP,2)+(1.f-pow(alphaP,2))*(pow(dot(intersection.normal,w0),2))))  ;
-  float GGX = GGX1*GGX2 ;
-  cout<<"GGX="<<GGX<<endl;
-  float DGGX = pow(alphaP,2)/(3.14*pow(1.0f+(pow(alphaP,2)-1.0f)*pow(dot(intersection.normal,wh),2),2)) ;
-
-  float F0 = 0.04f ;
-  float zero = 0.0f ;
-  float Fresnel = F0 + (1.f-F0)*pow(1-max(zero,dot(wi,wh)),5) ;
-
-  Vec3f fs_GGX = (DGGX*Fresnel*GGX)/(dot(intersection.normal,wi)*dot(intersection.normal,w0)*4)*(Vec3f(1.0f,0.0f,0.0f)+Vec3f(0.0f,1.0f,0.0f)+Vec3f(0.0f,0.0f,1.0f)) ;
-  //  Vec3f fd = Vec/ 3.14;
-  Vec3f f = fs_GGX;*/
 
 }
 
@@ -346,13 +327,26 @@ vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
 }
 
 Intersection raySceneIntersection(Ray ray) {
+
+  //diffuse
+  Vec3f valDiffuse = Vec3f(0.f,1.f,0.0f);
+  float valShininess = 5.f;
+
   //chaque intersection est suivie de sa normale dans la liste;
-  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f));
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, 5.f);
   float distanceMin = 1000000.f;
+
 
   for (unsigned int s = 0; s < shapes.size (); s++) {
 	//on tourne sur les triangles
 	for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+
+    //on recupere le diffuse du mesh
+    if (!materials.empty ()) {
+		    unsigned int m = shapes[s].mesh.material_ids[t];
+        valDiffuse = Vec3f(materials[m].diffuse[0], materials[m].diffuse[1], materials[m].diffuse[2]);
+        valShininess = materials[m].shininess;
+    }
 	  //pour chaque triangle
 	  //on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
 	  unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
@@ -371,7 +365,7 @@ Intersection raySceneIntersection(Ray ray) {
 	  if(intersection.intersect) {
 		if(  d < distanceMin){
 		  distanceMin = d;
-		  retour = Intersection(intersection.ptIntersection, intersection.normal);
+		  retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, true);
 		}
 	  }
 
@@ -383,11 +377,10 @@ Intersection raySceneIntersection(Ray ray) {
 int calculOmbre(Intersection intersection){
 
   Ray rayon = Ray(intersection.ptIntersection+0.0001f*intersection.normal,lightPos);
-  if( raySceneIntersection(rayon).ptIntersection !=  camEyeCartesian ) {
+  if( !raySceneIntersection(rayon).intersect ) {
     return 0;
   }
-  else return 1;
-
+  return 1;
 }
 
 void computeSceneNormals () {
@@ -590,9 +583,9 @@ void rayTrace () {
 
       Ray rayon = Ray(camEyeCartesian, positionPixel-camEyeCartesian) ;
       Intersection intersection = raySceneIntersection(rayon) ;
-      // int val = calculOmbre(intersection);
+      //int val = calculOmbre(intersection);
 
-      Vec3f pixelColor = evaluateResponse(intersection);// * val;
+      Vec3f pixelColor = evaluateResponse(intersection);//* val;
       //Vec3f pixelColor = intersection.normal.length() > 0.0000001f ? Vec3f(0.0f,1.0f,0.0f) : Vec3f(1.0f,0.0f,0.0f) ;// * val;
 
 	  //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}

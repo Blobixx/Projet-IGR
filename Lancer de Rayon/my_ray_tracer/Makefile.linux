@@ -17,5 +17,5 @@ $(CIBLE): $(OBJS)
 clean:
 	rm -f  *~  $(CIBLE) $(OBJS)
 
-main.o: main.cpp tiny_obj_loader.h Vec3.h Ray.h
+main.o: main.cpp tiny_obj_loader.h Vec3.h Ray.h Intersection.h
 tiny_obj_loader.o: tiny_obj_loader.cpp tiny_obj_loader.h
