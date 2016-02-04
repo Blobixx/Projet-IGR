@@ -53,7 +53,7 @@ Intersection Ray::rayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float t = dot(e1,r) ;
 	if ( t>=0) {
 	  //		return Intersection(p0*b0+p1*b1+p2*b2,normale);
-	  return Intersection(p0*b0+p1*b1+p2*b2,Vec3f(1.0f), true);
+	  return Intersection(p0*b0+p1*b1+p2*b2,normale, true);
 	}
 	return intersection ;
 }
