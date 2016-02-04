@@ -8,7 +8,7 @@
 
 using namespace std;
 
-static Vec3f camEyePolar = Vec3f(2.f*1.f, M_PI/2.f, M_PI/2.f);
+static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.f, M_PI/2.f);
 static Vec3f camEyeCartesian = polarToCartesian(camEyePolar) ;
 
 class Ray {
@@ -30,6 +30,7 @@ public:
 //renvoie l'intersection entre le rayon et un triangle
 Intersection Ray::RayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
+	Intersection intersection = Intersection(camEyeCartesian,Vec3f(0.f,0.f,0.f));
 	Intersection tableauRetour = Intersection(camEyeCartesian,Vec3f(0.f,0.f,0.f));
 
 	Vec3f e0 = p1-p0;
