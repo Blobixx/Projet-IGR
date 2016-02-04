@@ -592,8 +592,8 @@ void rayTrace () {
       Intersection intersection = raySceneIntersection(rayon) ;
       // int val = calculOmbre(intersection);
 
-      //ec3f pixelColor = evaluateResponse(intersection);// * val;
-      Vec3f pixelColor = intersection.normal.length() > 0.0000001f ? Vec3f(0.0f,1.0f,0.0f) : Vec3f(1.0f,0.0f,0.0f) ;// * val;
+      Vec3f pixelColor = evaluateResponse(intersection);// * val;
+      //Vec3f pixelColor = intersection.normal.length() > 0.0000001f ? Vec3f(0.0f,1.0f,0.0f) : Vec3f(1.0f,0.0f,0.0f) ;// * val;
 
 	  //  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
       rayImage[index] = pixelColor[0] * 255;
