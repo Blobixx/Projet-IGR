@@ -40,7 +40,7 @@ static Vec3f camUp = Vec3f(0.0f,1.0f,0.0f);
 // Expressing the camera position in polar coordinate, in the frame of the target
 
 // Scene elements
-static Vec3f lightPos = Vec3f (1.f, 1.f, 1.f);
+static Vec3f lightPos = Vec3f (1.f);
 static Vec3f lightColor = Vec3f (1.f);
 static Vec3f sceneCenter = Vec3f (0.f, 0.f, 0.f);
 static float sceneRadius = 1.f;
@@ -142,8 +142,13 @@ Vec3f evaluateResponse(Intersection intersection) {
 	float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
 	float G = G01*G02;
 
+
 	Vec3f fs = Vec3f(D*F*G/(4*norwi*norw0));
 
+
+	// Modele Blinn Phong
+	Vec3f fs = ks*pow(norwh,shininess) ;
+	
 	Vec3f f = fd + fs;
 
 	Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
@@ -653,9 +658,10 @@ Intersection raySceneIntersection(Ray ray) {
 	//diffuse
 	Vec3f valDiffuse = Vec3f(0.f,1.f,0.0f);
 	float valShininess = 5.f;
+	Vec3f valSpecular = Vec3f(1.0f) ;
 
 	//chaque intersection est suivie de sa normale dans la liste;
-	Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, 5.f);
+	Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, 5.f, Vec3f(1.0f));
 	float distanceMin = 1000000.f;
 
 
@@ -668,6 +674,7 @@ Intersection raySceneIntersection(Ray ray) {
 				unsigned int m = shapes[s].mesh.material_ids[t];
 				valDiffuse = Vec3f(materials[m].diffuse[0], materials[m].diffuse[1], materials[m].diffuse[2]);
 				valShininess = materials[m].shininess;
+				valSpecular = Vec3f(materials[m].specular[0], materials[m].specular[1], materials[m].specular[2]);
 			}
 			//pour chaque triangle
 			//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
@@ -687,7 +694,7 @@ Intersection raySceneIntersection(Ray ray) {
 			if(intersection.intersect) {
 				if(  d < distanceMin){
 					distanceMin = d;
-					retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, true);
+					retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, true);
 				}
 			}
 
@@ -793,7 +800,7 @@ void initCamera () {
 }
 
 void initLighting () {
-	lightPos = 2.f * Vec3f (sceneRadius, sceneRadius, sceneRadius);
+	lightPos = Vec3f (sceneRadius, sceneRadius, sceneRadius);
 	glEnable (GL_LIGHTING);
 	GLfloat position[4] = {lightPos[0], lightPos[1], lightPos[2], 1.0f};
 	GLfloat color[4] = {lightColor[0], lightColor[1], lightColor[2], 1.0f};
@@ -901,19 +908,10 @@ void rayTrace () {
 
 			Ray rayon = Ray(camEyeCartesian, positionPixel-camEyeCartesian) ;
 			Intersection intersection = raySceneIntersection(rayon) ;
-			//int val = calculOmbre(intersection);
-
-			Vec3f pixelColor = evaluateResponse(intersection);//* val;
-			//Vec3f pixelColor = intersection.normal.length() > 0.0000001f ? Vec3f(0.0f,1.0f,0.0f) : Vec3f(1.0f,0.0f,0.0f) ;// * val;
-
-			//  else {Vec3f pixelColor = Vec3f(0.0f,0.0f,0.0f);}
+			Vec3f pixelColor = evaluateResponse(intersection);
 			rayImage[index] = pixelColor[0] * 255;
 			rayImage[index+1] = pixelColor[1] * 255;
 			rayImage[index+2] = pixelColor[2] * 255;
-			/*rayImage[index] = pixelColor[0] * 255; // pixelColor[0] * 255;
-			  rayImage[index+1] = pixelColor[1] * 255;
-			  rayImage[index+2] = pixelColor[2] * 255;*/
-
 		}
 	}
 
