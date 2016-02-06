@@ -1,3 +1,6 @@
+#ifndef _KDNODE_H
+#define _KDNODE_H
+
 #include <cmath>
 #include <vector>
 #include "Vec3.h"
@@ -14,12 +17,16 @@ public :
   BoundingBox boundingBox ; 
   KdNode * leftChild;
   KdNode *rightChild;
+//intersection rayon - BBox
+  bool intersection ;
   
   vector<float> feuille ;
 
   KdNode() {}
   ~KdNode() {}
 
-  KdNode(BoundingBox boundingBox) : boundingBox(boundingBox) {} 
+  KdNode(BoundingBox boundingBox,  bool intersection = false) : boundingBox(boundingBox) {} 
 
 } ;
+
+#endif

@@ -17,7 +17,8 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
-#include "KdNode.h"
+//#include "KdNode.h"
+
 
 using namespace std;
 
@@ -119,44 +120,40 @@ vector<float> getListOfAllPoints(){
 //renvoie la couleur
 Vec3f evaluateResponse(Intersection intersection) {
 
-	Vec3f wi = intersection.ptIntersection - lightPos;
-	wi.normalize();
-	Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
-	w0.normalize();
-	Vec3f wh = w0 + wi;
-	Vec3f n = intersection.normal;
-	wh.normalize();
-	n.normalize();
 
-	float norwh = dot(n,wh);
-	float norw0 = dot(n,w0);
-	float norwi = dot(n,wi);
+        Vec3f wi = intersection.ptIntersection - lightPos; 
+        wi.normalize(); 
+        Vec3f w0 = camEyeCartesian-intersection.ptIntersection; 
+        w0.normalize(); 
+        Vec3f wh = w0 + wi; 
+        Vec3f n = intersection.normal; 
+        wh.normalize(); 
+        n.normalize(); 
 
-	Vec3f fd = intersection.diffuse;
-	//float alpha = sqrt(2/(intersection.shininess +2));
-	float alpha =0.01;
+        float norwh = dot(n,wh); 
+        float norw0 = dot(n,w0); 
+        float norwi = dot(n,wi); 
 
-	float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) );
-	float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
-	float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
-	float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
-	float G = G01*G02;
+        //on recupere la diffuse du materiau via l'intersection 
+        Vec3f fd = intersection.diffuse; 
 
+        float alpha =0.5; 
 
-	Vec3f fs = Vec3f(D*F*G/(4*norwi*norw0));
+        float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) ); 
+        float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5); 
+        float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2))); 
+        float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
+        float G = G01*G02; 
 
+        Vec3f fs = Vec3f(D*F*G/(4*norwi*norw0)); 
 
-	// Modele Blinn Phong
-	Vec3f fs = ks*pow(norwh,shininess) ;
-	
-	Vec3f f = fd + fs;
+        Vec3f f = fd + fs; 
 
-	Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
-	return color ;
-
+        Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace() 
+        return color ; 
 }
 
-
+// Recalcul une liste de tous les points dans l'ordre des triangles pour pouvoir utiliser le KdTree avec le triangle
 vector<float> triListe (vector<float>  pointList){
 vector<float> pointListRetour;
 	for (unsigned int s = 0; s < shapes.size(); s++) {
@@ -186,6 +183,8 @@ vector<float> pointListRetour;
 
 return pointListRetour ;
 }
+
+
 
 //calcul de la boite englobatnte miniaml d'une liste de point
 BoundingBox computeBoundingBox(vector<float> pointList) {
@@ -619,38 +618,24 @@ if(compteur%3==2) {
 
 KdNode buildKdTree(vector<float> pointList) {
 
-  vector<float> upperPart;
-  vector<float> lowerPart;
-  BoundingBox boundingBox ;
-  KdNode node ;
+KdNode node ;
     //la dernière boundingBox est composée de 30 points (10 triangles)
     if(pointList.size() > 90) {
-      boundingBox = computeBoundingBox(pointList) ;
-	node = KdNode(boundingBox);
+	
+      BoundingBox boundingBox = computeBoundingBox(pointList) ;
       char maxAxe = boundingBox.maxAxis() ;
       float point = findMedianSample(boundingBox,pointList) ;
-      vector<float> upperPart = upperPartition(pointList, maxAxe, point) ;
-      vector<float> lowerPart = lowerPartition(pointList, maxAxe, point) ;
+      vector<float>  upperPart = upperPartition(pointList, maxAxe, point) ;
+      vector<float>  lowerPart = lowerPartition(pointList, maxAxe, point) ;
 
       *(node.leftChild) = buildKdTree(upperPart);
       *(node.rightChild) = buildKdTree(lowerPart);
-	return node; 
     }
     else{
-      BoundingBox boundingBox1 = computeBoundingBox(upperPart);
-      BoundingBox boundingBox2 = computeBoundingBox(lowerPart);
-	KdNode node1 = KdNode(boundingBox1);
-	KdNode node2 = KdNode(boundingBox2);
-	KdNode * node11 = &node1;
-	KdNode * node22 = &node2;
-	
-      node.leftChild= node11;
-      node.rightChild= node22;
 
-      node1.feuille = upperPart;
-      node2.feuille = lowerPart;
-	return node; 
-   }
+      node.feuille = pointList ;
+   	}
+    return node ; 
 }
 
 Intersection raySceneIntersection(Ray ray) {
@@ -699,6 +684,7 @@ Intersection raySceneIntersection(Ray ray) {
 			}
 
 		}
+//KdNode node = buildKdTree(getListOfAllPoints());
 	}
 	return retour;
 }

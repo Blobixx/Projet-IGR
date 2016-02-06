@@ -1,3 +1,6 @@
+#ifndef _INTERSECTION_H
+#define _INTERSECTION_H
+
 #include "Vec3.h"
 
 
@@ -15,3 +18,5 @@ public:
       : ptIntersection(ptIntersection), normal(normal), diffuse(diffuse), shininess(shininess), specular(specular), intersect(intersect){}
 
 };
+
+#endif
