@@ -18,7 +18,6 @@
 #include "tiny_obj_loader.h"
 #include "Ray.h"
 #include "KdNode.h"
-#include "BoundingBox.h"
 
 using namespace std;
 
@@ -117,15 +116,15 @@ vector<float> getListOfAllPoints(){
 	return pointList ;
 }
 
-//rendvoie la couleur
+//renvoie la couleur
 Vec3f evaluateResponse(Intersection intersection) {
 
 	Vec3f wi = intersection.ptIntersection - lightPos;
+	wi.normalize();
 	Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
+	w0.normalize();
 	Vec3f wh = w0 + wi;
 	Vec3f n = intersection.normal;
-	wi.normalize();
-	w0.normalize();
 	wh.normalize();
 	n.normalize();
 
@@ -134,21 +133,53 @@ Vec3f evaluateResponse(Intersection intersection) {
 	float norwi = dot(n,wi);
 
 	Vec3f fd = intersection.diffuse;
-	float alpha = sqrt(2/(intersection.shininess +2));
+	//float alpha = sqrt(2/(intersection.shininess +2));
+	float alpha =0.01;
 
 	float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) );
 	float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
 	float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
-	float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2)));
+	float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
 	float G = G01*G02;
 
-	Vec3f fs = Vec3f(D*F*G/(4*norwh*norw0));
+	Vec3f fs = Vec3f(D*F*G/(4*norwi*norw0));
 
 	Vec3f f = fd + fs;
 
 	Vec3f color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
 	return color ;
 
+}
+
+
+vector<float> triListe (vector<float>  pointList){
+vector<float> pointListRetour;
+	for (unsigned int s = 0; s < shapes.size(); s++) {
+		//on tourne sur les triangles
+		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+			//pour chaque triangle
+			//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
+			unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
+			unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
+			unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
+
+			for (unsigned int i=0; i<3;i++){
+				pointListRetour.push_back(shapes[s].mesh.positions[indexV1+i]);			
+
+			}
+			for (unsigned int i=0; i<3;i++){
+				pointListRetour.push_back(shapes[s].mesh.positions[indexV2+i]);			
+
+			}
+			for (unsigned int i=0; i<3;i++){
+				pointListRetour.push_back(shapes[s].mesh.positions[indexV3+i]);			
+
+			}
+
+		}
+	}
+
+return pointListRetour ;
 }
 
 //calcul de la boite englobatnte miniaml d'une liste de point
@@ -240,39 +271,168 @@ float findMedianSample(BoundingBox boundingBox, vector<float> pointList) {
 
 //partie superieur selon le point median
 vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
-
+int compteur =0;
 	vector<float> upperPartition ;
 	upperPartition.resize(listPoint.size()) ;
 	unsigned int indice =0;
 	if (axeMax == 'x') {
 		for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] > val ) {
+//on teste la position du point
+if(compteur%3==0){
 				upperPartition[indice]=listPoint[j];
 				upperPartition[indice+1]=listPoint[j+1];
 				upperPartition[indice+2]=listPoint[j+2];
-				indice+=3;
+
+				upperPartition[indice+3]=listPoint[j+3];
+				upperPartition[indice+4]=listPoint[j+4];
+				upperPartition[indice+5]=listPoint[j+5];
+
+				upperPartition[indice+6]=listPoint[j+6];
+				upperPartition[indice+7]=listPoint[j+7];
+				upperPartition[indice+8]=listPoint[j+8];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				upperPartition[indice+3]=listPoint[j];
+				upperPartition[indice+4]=listPoint[j+1];
+				upperPartition[indice+5]=listPoint[j+2];
+
+				upperPartition[indice]=listPoint[j-3];
+				upperPartition[indice+1]=listPoint[j-2];
+				upperPartition[indice+2]=listPoint[j-1];
+
+				upperPartition[indice+6]=listPoint[j+3];
+				upperPartition[indice+7]=listPoint[j+4];
+				upperPartition[indice+8]=listPoint[j+5];
+
+				indice+=9;
+				j+=3;	 }
+
+if(compteur%3==2) {
+				upperPartition[indice+6]=listPoint[j];
+				upperPartition[indice+7]=listPoint[j+1];
+				upperPartition[indice+8]=listPoint[j+2];
+
+				upperPartition[indice+3]=listPoint[j-3];
+				upperPartition[indice+4]=listPoint[j-2];
+				upperPartition[indice+5]=listPoint[j-1];
+
+				upperPartition[indice]=listPoint[j-6];
+				upperPartition[indice+1]=listPoint[j-5];
+				upperPartition[indice+2]=listPoint[j-4];
+
+				indice+=9; }
 
 			}
 		}
 	}
 	if (axeMax == 'y') {
 		for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] > val ) {
+//on teste la position du point
+if(compteur%3==0) {
 				upperPartition[indice]=listPoint[j-1];
 				upperPartition[indice+1]=listPoint[j];
 				upperPartition[indice+2]=listPoint[j+1];
-				indice+=3;
+
+				upperPartition[indice+3]=listPoint[j+2];
+				upperPartition[indice+4]=listPoint[j+3];
+				upperPartition[indice+5]=listPoint[j+4];
+
+				upperPartition[indice+6]=listPoint[j+5];
+				upperPartition[indice+7]=listPoint[j+6];
+				upperPartition[indice+8]=listPoint[j+7];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				upperPartition[indice+3]=listPoint[j-1];
+				upperPartition[indice+4]=listPoint[j];
+				upperPartition[indice+5]=listPoint[j+1];
+
+				upperPartition[indice]=listPoint[j-4];
+				upperPartition[indice+1]=listPoint[j-3];
+				upperPartition[indice+2]=listPoint[j-2];
+
+				upperPartition[indice+6]=listPoint[j+2];
+				upperPartition[indice+7]=listPoint[j+3];
+				upperPartition[indice+8]=listPoint[j+4];
+
+				indice+=9;
+				j+=3; }
+
+if(compteur%3==2) {
+				upperPartition[indice+6]=listPoint[j-1];
+				upperPartition[indice+7]=listPoint[j];
+				upperPartition[indice+8]=listPoint[j+1];
+
+				upperPartition[indice+3]=listPoint[j-4];
+				upperPartition[indice+4]=listPoint[j-3];
+				upperPartition[indice+5]=listPoint[j-2];
+
+				upperPartition[indice]=listPoint[j-7];
+				upperPartition[indice+1]=listPoint[j-6];
+				upperPartition[indice+2]=listPoint[j-5];
+
+				indice+=9; }
 
 			}
 		}
 	}
-	if (axeMax == 'z') {
+if (axeMax == 'z') {
 		for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] > val ) {
+//on teste la position du point
+if(compteur%3==0) {
 				upperPartition[indice]=listPoint[j-2];
 				upperPartition[indice+1]=listPoint[j-1];
 				upperPartition[indice+2]=listPoint[j];
-				indice+=3;
+
+				upperPartition[indice+3]=listPoint[j+1];
+				upperPartition[indice+4]=listPoint[j+2];
+				upperPartition[indice+5]=listPoint[j+3];
+
+				upperPartition[indice+6]=listPoint[j+4];
+				upperPartition[indice+7]=listPoint[j+5];
+				upperPartition[indice+8]=listPoint[j+6];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				upperPartition[indice+3]=listPoint[j-2];
+				upperPartition[indice+4]=listPoint[j-1];
+				upperPartition[indice+5]=listPoint[j];
+
+				upperPartition[indice]=listPoint[j-5];
+				upperPartition[indice+1]=listPoint[j-4];
+				upperPartition[indice+2]=listPoint[j-3];
+
+				upperPartition[indice+6]=listPoint[j+1];
+				upperPartition[indice+7]=listPoint[j+2];
+				upperPartition[indice+8]=listPoint[j+3];
+
+				indice+=9;
+				j+=3; }
+
+if(compteur%3==2) {
+				upperPartition[indice+6]=listPoint[j-2];
+				upperPartition[indice+7]=listPoint[j-1];
+				upperPartition[indice+8]=listPoint[j];
+
+				upperPartition[indice+3]=listPoint[j-3];
+				upperPartition[indice+4]=listPoint[j-2];
+				upperPartition[indice+5]=listPoint[j-1];
+
+				upperPartition[indice]=listPoint[j-6];
+				upperPartition[indice+1]=listPoint[j-5];
+				upperPartition[indice+2]=listPoint[j-4];
+
+				indice+=9; }
 
 			}
 		}
@@ -283,46 +443,209 @@ vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
 
 //partie  inferieure
 vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
-
+int compteur =0;
 	vector<float> lowerPartition ;
 	lowerPartition.resize(listPoint.size()) ;
 	unsigned int indice =0;
-
 	if (axeMax == 'x') {
 		for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] < val ) {
+//on teste la position du point
+if(compteur%3==0){
 				lowerPartition[indice]=listPoint[j];
 				lowerPartition[indice+1]=listPoint[j+1];
 				lowerPartition[indice+2]=listPoint[j+2];
-				indice+=3;
+
+				lowerPartition[indice+3]=listPoint[j+3];
+				lowerPartition[indice+4]=listPoint[j+4];
+				lowerPartition[indice+5]=listPoint[j+5];
+
+				lowerPartition[indice+6]=listPoint[j+6];
+				lowerPartition[indice+7]=listPoint[j+7];
+				lowerPartition[indice+8]=listPoint[j+8];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				lowerPartition[indice+3]=listPoint[j];
+				lowerPartition[indice+4]=listPoint[j+1];
+				lowerPartition[indice+5]=listPoint[j+2];
+
+				lowerPartition[indice]=listPoint[j-3];
+				lowerPartition[indice+1]=listPoint[j-2];
+				lowerPartition[indice+2]=listPoint[j-1];
+
+				lowerPartition[indice+6]=listPoint[j+3];
+				lowerPartition[indice+7]=listPoint[j+4];
+				lowerPartition[indice+8]=listPoint[j+5];
+
+				indice+=9;
+				j+=3;	 }
+
+if(compteur%3==2) {
+				lowerPartition[indice+6]=listPoint[j];
+				lowerPartition[indice+7]=listPoint[j+1];
+				lowerPartition[indice+8]=listPoint[j+2];
+
+				lowerPartition[indice+3]=listPoint[j-3];
+				lowerPartition[indice+4]=listPoint[j-2];
+				lowerPartition[indice+5]=listPoint[j-1];
+
+				lowerPartition[indice]=listPoint[j-6];
+				lowerPartition[indice+1]=listPoint[j-5];
+				lowerPartition[indice+2]=listPoint[j-4];
+
+				indice+=9; }
 
 			}
 		}
 	}
 	if (axeMax == 'y') {
 		for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] < val ) {
+//on teste la position du point
+if(compteur%3==0) {
 				lowerPartition[indice]=listPoint[j-1];
 				lowerPartition[indice+1]=listPoint[j];
 				lowerPartition[indice+2]=listPoint[j+1];
-				indice+=3;
+
+				lowerPartition[indice+3]=listPoint[j+2];
+				lowerPartition[indice+4]=listPoint[j+3];
+				lowerPartition[indice+5]=listPoint[j+4];
+
+				lowerPartition[indice+6]=listPoint[j+5];
+				lowerPartition[indice+7]=listPoint[j+6];
+				lowerPartition[indice+8]=listPoint[j+7];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				lowerPartition[indice+3]=listPoint[j-1];
+				lowerPartition[indice+4]=listPoint[j];
+				lowerPartition[indice+5]=listPoint[j+1];
+
+				lowerPartition[indice]=listPoint[j-4];
+				lowerPartition[indice+1]=listPoint[j-3];
+				lowerPartition[indice+2]=listPoint[j-2];
+
+				lowerPartition[indice+6]=listPoint[j+2];
+				lowerPartition[indice+7]=listPoint[j+3];
+				lowerPartition[indice+8]=listPoint[j+4];
+
+				indice+=9;
+				j+=3; }
+
+if(compteur%3==2) {
+				lowerPartition[indice+6]=listPoint[j-1];
+				lowerPartition[indice+7]=listPoint[j];
+				lowerPartition[indice+8]=listPoint[j+1];
+
+				lowerPartition[indice+3]=listPoint[j-4];
+				lowerPartition[indice+4]=listPoint[j-3];
+				lowerPartition[indice+5]=listPoint[j-2];
+
+				lowerPartition[indice]=listPoint[j-7];
+				lowerPartition[indice+1]=listPoint[j-6];
+				lowerPartition[indice+2]=listPoint[j-5];
+
+				indice+=9; }
 
 			}
 		}
 	}
-	if (axeMax == 'z') {
+if (axeMax == 'z') {
 		for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
+			compteur++;
 			if(listPoint[j] < val ) {
+//on teste la position du point
+if(compteur%3==0) {
 				lowerPartition[indice]=listPoint[j-2];
 				lowerPartition[indice+1]=listPoint[j-1];
 				lowerPartition[indice+2]=listPoint[j];
-				indice+=3;
+
+				lowerPartition[indice+3]=listPoint[j+1];
+				lowerPartition[indice+4]=listPoint[j+2];
+				lowerPartition[indice+5]=listPoint[j+3];
+
+				lowerPartition[indice+6]=listPoint[j+4];
+				lowerPartition[indice+7]=listPoint[j+5];
+				lowerPartition[indice+8]=listPoint[j+6];
+
+				indice+=9;
+				j+=6; }
+if(compteur%3==1) {
+				lowerPartition[indice+3]=listPoint[j-2];
+				lowerPartition[indice+4]=listPoint[j-1];
+				lowerPartition[indice+5]=listPoint[j];
+
+				lowerPartition[indice]=listPoint[j-5];
+				lowerPartition[indice+1]=listPoint[j-4];
+				lowerPartition[indice+2]=listPoint[j-3];
+
+				lowerPartition[indice+6]=listPoint[j+1];
+				lowerPartition[indice+7]=listPoint[j+2];
+				lowerPartition[indice+8]=listPoint[j+3];
+
+				indice+=9;
+				j+=3; }
+
+if(compteur%3==2) {
+				lowerPartition[indice+6]=listPoint[j-2];
+				lowerPartition[indice+7]=listPoint[j-1];
+				lowerPartition[indice+8]=listPoint[j];
+
+				lowerPartition[indice+3]=listPoint[j-3];
+				lowerPartition[indice+4]=listPoint[j-2];
+				lowerPartition[indice+5]=listPoint[j-1];
+
+				lowerPartition[indice]=listPoint[j-6];
+				lowerPartition[indice+1]=listPoint[j-5];
+				lowerPartition[indice+2]=listPoint[j-4];
+
+				indice+=9; }
 
 			}
 		}
 	}
-
 	return lowerPartition ;
+}
+
+KdNode buildKdTree(vector<float> pointList) {
+
+  vector<float> upperPart;
+  vector<float> lowerPart;
+  BoundingBox boundingBox ;
+  KdNode node ;
+    //la dernière boundingBox est composée de 30 points (10 triangles)
+    if(pointList.size() > 90) {
+      boundingBox = computeBoundingBox(pointList) ;
+	node = KdNode(boundingBox);
+      char maxAxe = boundingBox.maxAxis() ;
+      float point = findMedianSample(boundingBox,pointList) ;
+      vector<float> upperPart = upperPartition(pointList, maxAxe, point) ;
+      vector<float> lowerPart = lowerPartition(pointList, maxAxe, point) ;
+
+      *(node.leftChild) = buildKdTree(upperPart);
+      *(node.rightChild) = buildKdTree(lowerPart);
+	return node; 
+    }
+    else{
+      BoundingBox boundingBox1 = computeBoundingBox(upperPart);
+      BoundingBox boundingBox2 = computeBoundingBox(lowerPart);
+	KdNode node1 = KdNode(boundingBox1);
+	KdNode node2 = KdNode(boundingBox2);
+	KdNode * node11 = &node1;
+	KdNode * node22 = &node2;
+	
+      node.leftChild= node11;
+      node.rightChild= node22;
+
+      node1.feuille = upperPart;
+      node2.feuille = lowerPart;
+	return node; 
+   }
 }
 
 Intersection raySceneIntersection(Ray ray) {
