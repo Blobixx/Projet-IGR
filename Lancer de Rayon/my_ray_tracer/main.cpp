@@ -125,22 +125,22 @@ Vec3f evaluateResponse(Intersection intersection) {
         wi.normalize(); 
         Vec3f w0 = camEyeCartesian-intersection.ptIntersection; 
         w0.normalize(); 
-        Vec3f wh = w0 + wi; 
+        Vec3f wh = w0 - wi; 
         Vec3f n = intersection.normal; 
         wh.normalize(); 
         n.normalize(); 
 
         float norwh = dot(n,wh); 
         float norw0 = dot(n,w0); 
-        float norwi = dot(n,wi); 
+        float norwi = max(dot(n,wi),dot(n,-wi)); 
 
         //on recupere la diffuse du materiau via l'intersection 
         Vec3f fd = intersection.diffuse; 
 
-        float alpha =0.5; 
+        float alpha =0.01f; 
 
         float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) ); 
-        float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5); 
+        float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(-wi,wh))  ,5); 
         float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2))); 
         float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
         float G = G01*G02; 
