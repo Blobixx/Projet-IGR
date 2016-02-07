@@ -13,10 +13,9 @@ class KdNode {
 
 public :
 
-  //KdNode leftChild;
   BoundingBox boundingBox ; 
-  KdNode * leftChild;
-  KdNode *rightChild;
+  KdNode * leftChild = NULL;
+  KdNode *rightChild = NULL;
 //intersection rayon - BBox
   bool intersection ;
   

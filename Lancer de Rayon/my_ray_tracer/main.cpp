@@ -650,7 +650,7 @@ Intersection raySceneIntersection(Ray ray) {
 	float distanceMin = 1000000.f;
 
 
-	for (unsigned int s = 0; s < shapes.size (); s++) {
+	/* for (unsigned int s = 0; s < shapes.size (); s++) {
 		//on tourne sur les triangles
 		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
 
@@ -683,9 +683,34 @@ Intersection raySceneIntersection(Ray ray) {
 				}
 			}
 
-		}
-//KdNode node = buildKdTree(getListOfAllPoints());
+		} */
+
+	vector<float> listeDeToutLesPoints = getListOfAllPoints() ;
+	vector<float> listeTrie = triListe(listeDeToutLesPoints);
+
+ 	KdNode node = buildKdTree(listeTrie);
+
+	vector<float> listeTriangles = parcoursTree(node);
+
+	for(unsigned int i=0;i<listeTriangles.size();i+=9) {
+			Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
+			Vec3f vertex2 = Vec3f(listeTriangles[i+3],listeTriangles[i+4],listeTriangles[i+5]);
+			Vec3f vertex3 = Vec3f(listeTriangles[i+6],listeTriangles[i+7],listeTriangles[i+8]);
+
+			Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
+
+			//on retournera celle dont la distance est minimale
+			float d = dist(intersection.ptIntersection, camEyeCartesian);
+			if(intersection.intersect) {
+				if(  d < distanceMin){
+					distanceMin = d;
+					retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, true);
+				}
+			}
 	}
+
+
+
 	return retour;
 }
 
