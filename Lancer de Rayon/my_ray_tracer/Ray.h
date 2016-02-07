@@ -39,7 +39,7 @@ public:
 
 
 Intersection Ray::rayRectangleIntersection(Face face){
-	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f));
+	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f), Vec3f(1.f));
 
  	Intersection intersection1 = this->rayTriangleIntersection(face.sommet1, face.sommet2, face.sommet3) ;
 	Intersection intersection2 = this->rayTriangleIntersection(face.sommet1, face.sommet3, face.sommet4) ;
