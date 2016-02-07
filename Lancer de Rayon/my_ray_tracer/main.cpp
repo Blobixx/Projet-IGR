@@ -17,7 +17,7 @@
 #include "Vec3.h"
 #include "tiny_obj_loader.h"
 #include "Ray.h"
-//#include "KdNode.h"
+#include "PointList.h"
 
 
 using namespace std;
@@ -40,14 +40,11 @@ static Vec3f camTarget;
 static Vec3f camUp = Vec3f(0.0f,1.0f,0.0f);
 // Expressing the camera position in polar coordinate, in the frame of the target
 
-static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.0f, M_PI/2.f);
-static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
-
 // Scene elements
+static Vec3f lightPos = Vec3f (1.f);
 static Vec3f lightColor = Vec3f (1.f);
 static Vec3f sceneCenter = Vec3f (0.f, 0.f, 0.f);
 static float sceneRadius = 1.f;
-static Vec3f lightPos = camEyeCartesian ;
 static vector<tinyobj::shape_t> shapes;
 static vector<tinyobj::material_t> materials;
 
@@ -57,6 +54,8 @@ static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
 
+static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.0f, M_PI/2.f);
+static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
 
 // Raytraced image
 static unsigned char * rayImage = NULL;
@@ -86,36 +85,6 @@ void initOpenGL () {
 	glEnable (GL_DEPTH_TEST); // Enable the z-buffer in the rasterization
 	glClearColor (0.0f, 0.0f, 0.0f, 1.0f); // Background color
 	glEnable (GL_COLOR_MATERIAL);
-}
-
-
-int calculTailleTotalDePoints(){
-	unsigned int taille=0;
-	for (unsigned int s = 0; s < shapes.size (); s++){
-		for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-			taille++;
-		}
-	}
-
-	return taille;
-}
-
-//retourne la liste de tous les points de la scene
-vector<float> getListOfAllPoints(){
-	vector<float> pointList;
-	unsigned int taille=calculTailleTotalDePoints();
-	pointList.resize(taille);
-	unsigned int i=0;
-	for (unsigned int s = 0; s < shapes.size (); s++){
-		for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-
-			pointList[i]=shapes[s].mesh.positions[3*p] ;
-			pointList[i+1]=shapes[s].mesh.positions[3*p+1] ;
-			pointList[i+2]=shapes[s].mesh.positions[3*p+2] ;
-			i=i+3;
-		}
-	}
-	return pointList ;
 }
 
 //renvoie la couleur
@@ -155,490 +124,15 @@ Vec3f evaluateResponse(Intersection intersection) {
         return color ; 
 }
 
-// Recalcul une liste de tous les points dans l'ordre des triangles pour pouvoir utiliser le KdTree avec le triangle
-vector<float> triListe (vector<float>  pointList){
-vector<float> pointListRetour;
-	for (unsigned int s = 0; s < shapes.size(); s++) {
-		//on tourne sur les triangles
-		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
-			//pour chaque triangle
-			//on obtient les float x,y,z des vertices du triangle via index, index+1, index+2
-			unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
-			unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
-			unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
 
-			for (unsigned int i=0; i<3;i++){
-				pointListRetour.push_back(shapes[s].mesh.positions[indexV1+i]);			
 
-			}
-			for (unsigned int i=0; i<3;i++){
-				pointListRetour.push_back(shapes[s].mesh.positions[indexV2+i]);			
 
-			}
-			for (unsigned int i=0; i<3;i++){
-				pointListRetour.push_back(shapes[s].mesh.positions[indexV3+i]);			
 
-			}
 
-		}
-	}
 
-return pointListRetour ;
-}
 
 
 
-//calcul de la boite englobatnte miniaml d'une liste de point
-BoundingBox computeBoundingBox(vector<float> pointList) {
-	float xMin = 10000.f;
-	float xMax = -10000.f;
-	float yMin = 10000.f;
-	float yMax = -10000.f;
-	float zMin = 10000.f;
-	float zMax = -10000.f;
-
-	for(unsigned i =0; i<pointList.size();i+=3 ){
-		if(pointList[i]<xMin){ xMin=pointList[i];}
-		if(pointList[i]>xMax){ xMax=pointList[i];}
-
-	}
-	for(unsigned i =1; i<pointList.size();i+=3 ){
-		if(pointList[i]<yMin){ yMin=pointList[i];}
-		if(pointList[i]>yMax){ yMax=pointList[i];}
-
-	}
-	for(unsigned i =2; i<pointList.size();i+=3 ){
-		if(pointList[i]<zMin){ zMin=pointList[i];}
-		if(pointList[i]>zMax){ zMax=pointList[i];}
-
-	}
-	BoundingBox boundingBox = BoundingBox(xMin, xMax,yMin,yMax,zMin,zMax);
-	return boundingBox;
-}
-
-//algorithme de TriSelection
-vector<float> TriSelection(vector<float> liste,unsigned int n) {
-	for(unsigned int i=0 ; i < n ; i++) {				//on parcourt le tableau
-		unsigned int p = i ;
-		for( unsigned int j = i ; j < n ; j++) {			//on cherche la position p du plus petit élément
-			if(liste[j] < liste[p] ) {
-				p=j;
-			}
-			//resultat.nbComparaisons++;	//comptage des opérations
-		}
-		float c = liste[i] ;						//on échange
-		liste[i] = liste[p] ;					//les deux
-		liste[p] = c ;						//nombres
-		//resultat.nbAffectations+=2;			//comptage des opérations
-	}
-	vector<float> listeRetour ;
-	listeRetour.resize(n) ;
-	for(unsigned int k = 0 ; k < n ; k++) {
-		liste[k] = listeRetour[k] ;
-	}
-	return listeRetour ;
-}
-
-//retourne la coordonnee du point median selon le grand axe de la boite
-float findMedianSample(BoundingBox boundingBox, vector<float> pointList) {
-	char axeMax = boundingBox.maxAxis() ;
-	int sizeList = pointList.size()/3 ;
-	vector<float> listeATrier ;
-	listeATrier.resize(pointList.size()/3) ;
-	unsigned int i = 0 ;
-
-	if (axeMax == 'x') {
-		for(unsigned j = 0 ; j<pointList.size(); j+=3) {
-			listeATrier[i] = pointList[j] ;
-			i++ ;
-		}
-	}
-	if (axeMax == 'y') {
-		for(unsigned j = 1 ; j<pointList.size(); j+=3) {
-			listeATrier[i] = pointList[j] ;
-			i++ ;
-		}
-	}
-	if (axeMax == 'z') {
-		for(unsigned j = 2 ; j<pointList.size(); j+=3) {
-			listeATrier[i] = pointList[j] ;
-			i++ ;
-		}
-	}
-
-	vector<float> listeTrier ;
-	listeTrier = TriSelection(listeATrier, sizeList) ;
-
-	int indiceMedian = floor(listeTrier.size()/2) +1 ;
-
-	return listeTrier[indiceMedian] ;
-
-}
-
-//partie superieur selon le point median
-vector<float> upperPartition(vector<float> listPoint, char axeMax, float val) {
-int compteur =0;
-	vector<float> upperPartition ;
-	upperPartition.resize(listPoint.size()) ;
-	unsigned int indice =0;
-	if (axeMax == 'x') {
-		for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] > val ) {
-//on teste la position du point
-if(compteur%3==0){
-				upperPartition[indice]=listPoint[j];
-				upperPartition[indice+1]=listPoint[j+1];
-				upperPartition[indice+2]=listPoint[j+2];
-
-				upperPartition[indice+3]=listPoint[j+3];
-				upperPartition[indice+4]=listPoint[j+4];
-				upperPartition[indice+5]=listPoint[j+5];
-
-				upperPartition[indice+6]=listPoint[j+6];
-				upperPartition[indice+7]=listPoint[j+7];
-				upperPartition[indice+8]=listPoint[j+8];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				upperPartition[indice+3]=listPoint[j];
-				upperPartition[indice+4]=listPoint[j+1];
-				upperPartition[indice+5]=listPoint[j+2];
-
-				upperPartition[indice]=listPoint[j-3];
-				upperPartition[indice+1]=listPoint[j-2];
-				upperPartition[indice+2]=listPoint[j-1];
-
-				upperPartition[indice+6]=listPoint[j+3];
-				upperPartition[indice+7]=listPoint[j+4];
-				upperPartition[indice+8]=listPoint[j+5];
-
-				indice+=9;
-				j+=3;	 }
-
-if(compteur%3==2) {
-				upperPartition[indice+6]=listPoint[j];
-				upperPartition[indice+7]=listPoint[j+1];
-				upperPartition[indice+8]=listPoint[j+2];
-
-				upperPartition[indice+3]=listPoint[j-3];
-				upperPartition[indice+4]=listPoint[j-2];
-				upperPartition[indice+5]=listPoint[j-1];
-
-				upperPartition[indice]=listPoint[j-6];
-				upperPartition[indice+1]=listPoint[j-5];
-				upperPartition[indice+2]=listPoint[j-4];
-
-				indice+=9; }
-
-			}
-		}
-	}
-	if (axeMax == 'y') {
-		for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] > val ) {
-//on teste la position du point
-if(compteur%3==0) {
-				upperPartition[indice]=listPoint[j-1];
-				upperPartition[indice+1]=listPoint[j];
-				upperPartition[indice+2]=listPoint[j+1];
-
-				upperPartition[indice+3]=listPoint[j+2];
-				upperPartition[indice+4]=listPoint[j+3];
-				upperPartition[indice+5]=listPoint[j+4];
-
-				upperPartition[indice+6]=listPoint[j+5];
-				upperPartition[indice+7]=listPoint[j+6];
-				upperPartition[indice+8]=listPoint[j+7];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				upperPartition[indice+3]=listPoint[j-1];
-				upperPartition[indice+4]=listPoint[j];
-				upperPartition[indice+5]=listPoint[j+1];
-
-				upperPartition[indice]=listPoint[j-4];
-				upperPartition[indice+1]=listPoint[j-3];
-				upperPartition[indice+2]=listPoint[j-2];
-
-				upperPartition[indice+6]=listPoint[j+2];
-				upperPartition[indice+7]=listPoint[j+3];
-				upperPartition[indice+8]=listPoint[j+4];
-
-				indice+=9;
-				j+=3; }
-
-if(compteur%3==2) {
-				upperPartition[indice+6]=listPoint[j-1];
-				upperPartition[indice+7]=listPoint[j];
-				upperPartition[indice+8]=listPoint[j+1];
-
-				upperPartition[indice+3]=listPoint[j-4];
-				upperPartition[indice+4]=listPoint[j-3];
-				upperPartition[indice+5]=listPoint[j-2];
-
-				upperPartition[indice]=listPoint[j-7];
-				upperPartition[indice+1]=listPoint[j-6];
-				upperPartition[indice+2]=listPoint[j-5];
-
-				indice+=9; }
-
-			}
-		}
-	}
-if (axeMax == 'z') {
-		for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] > val ) {
-//on teste la position du point
-if(compteur%3==0) {
-				upperPartition[indice]=listPoint[j-2];
-				upperPartition[indice+1]=listPoint[j-1];
-				upperPartition[indice+2]=listPoint[j];
-
-				upperPartition[indice+3]=listPoint[j+1];
-				upperPartition[indice+4]=listPoint[j+2];
-				upperPartition[indice+5]=listPoint[j+3];
-
-				upperPartition[indice+6]=listPoint[j+4];
-				upperPartition[indice+7]=listPoint[j+5];
-				upperPartition[indice+8]=listPoint[j+6];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				upperPartition[indice+3]=listPoint[j-2];
-				upperPartition[indice+4]=listPoint[j-1];
-				upperPartition[indice+5]=listPoint[j];
-
-				upperPartition[indice]=listPoint[j-5];
-				upperPartition[indice+1]=listPoint[j-4];
-				upperPartition[indice+2]=listPoint[j-3];
-
-				upperPartition[indice+6]=listPoint[j+1];
-				upperPartition[indice+7]=listPoint[j+2];
-				upperPartition[indice+8]=listPoint[j+3];
-
-				indice+=9;
-				j+=3; }
-
-if(compteur%3==2) {
-				upperPartition[indice+6]=listPoint[j-2];
-				upperPartition[indice+7]=listPoint[j-1];
-				upperPartition[indice+8]=listPoint[j];
-
-				upperPartition[indice+3]=listPoint[j-3];
-				upperPartition[indice+4]=listPoint[j-2];
-				upperPartition[indice+5]=listPoint[j-1];
-
-				upperPartition[indice]=listPoint[j-6];
-				upperPartition[indice+1]=listPoint[j-5];
-				upperPartition[indice+2]=listPoint[j-4];
-
-				indice+=9; }
-
-			}
-		}
-	}
-
-	return upperPartition ;
-}
-
-//partie  inferieure
-vector<float> lowerPartition(vector<float> listPoint, char axeMax, float val) {
-int compteur =0;
-	vector<float> lowerPartition ;
-	lowerPartition.resize(listPoint.size()) ;
-	unsigned int indice =0;
-	if (axeMax == 'x') {
-		for(unsigned j = 0 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] < val ) {
-//on teste la position du point
-if(compteur%3==0){
-				lowerPartition[indice]=listPoint[j];
-				lowerPartition[indice+1]=listPoint[j+1];
-				lowerPartition[indice+2]=listPoint[j+2];
-
-				lowerPartition[indice+3]=listPoint[j+3];
-				lowerPartition[indice+4]=listPoint[j+4];
-				lowerPartition[indice+5]=listPoint[j+5];
-
-				lowerPartition[indice+6]=listPoint[j+6];
-				lowerPartition[indice+7]=listPoint[j+7];
-				lowerPartition[indice+8]=listPoint[j+8];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				lowerPartition[indice+3]=listPoint[j];
-				lowerPartition[indice+4]=listPoint[j+1];
-				lowerPartition[indice+5]=listPoint[j+2];
-
-				lowerPartition[indice]=listPoint[j-3];
-				lowerPartition[indice+1]=listPoint[j-2];
-				lowerPartition[indice+2]=listPoint[j-1];
-
-				lowerPartition[indice+6]=listPoint[j+3];
-				lowerPartition[indice+7]=listPoint[j+4];
-				lowerPartition[indice+8]=listPoint[j+5];
-
-				indice+=9;
-				j+=3;	 }
-
-if(compteur%3==2) {
-				lowerPartition[indice+6]=listPoint[j];
-				lowerPartition[indice+7]=listPoint[j+1];
-				lowerPartition[indice+8]=listPoint[j+2];
-
-				lowerPartition[indice+3]=listPoint[j-3];
-				lowerPartition[indice+4]=listPoint[j-2];
-				lowerPartition[indice+5]=listPoint[j-1];
-
-				lowerPartition[indice]=listPoint[j-6];
-				lowerPartition[indice+1]=listPoint[j-5];
-				lowerPartition[indice+2]=listPoint[j-4];
-
-				indice+=9; }
-
-			}
-		}
-	}
-	if (axeMax == 'y') {
-		for(unsigned j = 1 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] < val ) {
-//on teste la position du point
-if(compteur%3==0) {
-				lowerPartition[indice]=listPoint[j-1];
-				lowerPartition[indice+1]=listPoint[j];
-				lowerPartition[indice+2]=listPoint[j+1];
-
-				lowerPartition[indice+3]=listPoint[j+2];
-				lowerPartition[indice+4]=listPoint[j+3];
-				lowerPartition[indice+5]=listPoint[j+4];
-
-				lowerPartition[indice+6]=listPoint[j+5];
-				lowerPartition[indice+7]=listPoint[j+6];
-				lowerPartition[indice+8]=listPoint[j+7];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				lowerPartition[indice+3]=listPoint[j-1];
-				lowerPartition[indice+4]=listPoint[j];
-				lowerPartition[indice+5]=listPoint[j+1];
-
-				lowerPartition[indice]=listPoint[j-4];
-				lowerPartition[indice+1]=listPoint[j-3];
-				lowerPartition[indice+2]=listPoint[j-2];
-
-				lowerPartition[indice+6]=listPoint[j+2];
-				lowerPartition[indice+7]=listPoint[j+3];
-				lowerPartition[indice+8]=listPoint[j+4];
-
-				indice+=9;
-				j+=3; }
-
-if(compteur%3==2) {
-				lowerPartition[indice+6]=listPoint[j-1];
-				lowerPartition[indice+7]=listPoint[j];
-				lowerPartition[indice+8]=listPoint[j+1];
-
-				lowerPartition[indice+3]=listPoint[j-4];
-				lowerPartition[indice+4]=listPoint[j-3];
-				lowerPartition[indice+5]=listPoint[j-2];
-
-				lowerPartition[indice]=listPoint[j-7];
-				lowerPartition[indice+1]=listPoint[j-6];
-				lowerPartition[indice+2]=listPoint[j-5];
-
-				indice+=9; }
-
-			}
-		}
-	}
-if (axeMax == 'z') {
-		for(unsigned j = 2 ; j<listPoint.size(); j+=3) {
-			compteur++;
-			if(listPoint[j] < val ) {
-//on teste la position du point
-if(compteur%3==0) {
-				lowerPartition[indice]=listPoint[j-2];
-				lowerPartition[indice+1]=listPoint[j-1];
-				lowerPartition[indice+2]=listPoint[j];
-
-				lowerPartition[indice+3]=listPoint[j+1];
-				lowerPartition[indice+4]=listPoint[j+2];
-				lowerPartition[indice+5]=listPoint[j+3];
-
-				lowerPartition[indice+6]=listPoint[j+4];
-				lowerPartition[indice+7]=listPoint[j+5];
-				lowerPartition[indice+8]=listPoint[j+6];
-
-				indice+=9;
-				j+=6; }
-if(compteur%3==1) {
-				lowerPartition[indice+3]=listPoint[j-2];
-				lowerPartition[indice+4]=listPoint[j-1];
-				lowerPartition[indice+5]=listPoint[j];
-
-				lowerPartition[indice]=listPoint[j-5];
-				lowerPartition[indice+1]=listPoint[j-4];
-				lowerPartition[indice+2]=listPoint[j-3];
-
-				lowerPartition[indice+6]=listPoint[j+1];
-				lowerPartition[indice+7]=listPoint[j+2];
-				lowerPartition[indice+8]=listPoint[j+3];
-
-				indice+=9;
-				j+=3; }
-
-if(compteur%3==2) {
-				lowerPartition[indice+6]=listPoint[j-2];
-				lowerPartition[indice+7]=listPoint[j-1];
-				lowerPartition[indice+8]=listPoint[j];
-
-				lowerPartition[indice+3]=listPoint[j-3];
-				lowerPartition[indice+4]=listPoint[j-2];
-				lowerPartition[indice+5]=listPoint[j-1];
-
-				lowerPartition[indice]=listPoint[j-6];
-				lowerPartition[indice+1]=listPoint[j-5];
-				lowerPartition[indice+2]=listPoint[j-4];
-
-				indice+=9; }
-
-			}
-		}
-	}
-	return lowerPartition ;
-}
-
-KdNode buildKdTree(vector<float> pointList) {
-
-KdNode node ;
-    //la dernière boundingBox est composée de 30 points (10 triangles)
-    if(pointList.size() > 90) {
-	
-      BoundingBox boundingBox = computeBoundingBox(pointList) ;
-      char maxAxe = boundingBox.maxAxis() ;
-      float point = findMedianSample(boundingBox,pointList) ;
-      vector<float>  upperPart = upperPartition(pointList, maxAxe, point) ;
-      vector<float>  lowerPart = lowerPartition(pointList, maxAxe, point) ;
-
-      *(node.leftChild) = buildKdTree(upperPart);
-      *(node.rightChild) = buildKdTree(lowerPart);
-    }
-    else{
-
-      node.feuille = pointList ;
-   	}
-    return node ; 
-}
 
 Intersection raySceneIntersection(Ray ray) {
 
@@ -652,7 +146,7 @@ Intersection raySceneIntersection(Ray ray) {
 	float distanceMin = 1000000.f;
 
 
-	for (unsigned int s = 0; s < shapes.size (); s++) {
+	/* for (unsigned int s = 0; s < shapes.size (); s++) {
 		//on tourne sur les triangles
 		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
 
@@ -687,7 +181,7 @@ Intersection raySceneIntersection(Ray ray) {
 				}
 			}
 		}
-	}
+	}*/
 					
 	
 					//point qui correspond à l'intersection que l'on vient de trouver mais decalee de epsilon selon la normale
@@ -746,7 +240,33 @@ Intersection raySceneIntersection(Ray ray) {
 			}
 
 		}
-	
+		} */
+/*
+	PointList listeDeToutLesPoints = getListOfAllPoints() ;
+// SOUCI : TRILISTE NE PREND RIEN EN ENTREE
+	PointList listeTrie = triListe();
+
+ 	KdNode node = listeTrie.buildKdTree();
+
+	vector<float> listeTriangles = ray.parcoursTree(node);
+
+	for(unsigned int i=0;i<listeTriangles.size();i+=9) {
+			Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
+			Vec3f vertex2 = Vec3f(listeTriangles[i+3],listeTriangles[i+4],listeTriangles[i+5]);
+			Vec3f vertex3 = Vec3f(listeTriangles[i+6],listeTriangles[i+7],listeTriangles[i+8]);
+
+			Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
+
+			//on retournera celle dont la distance est minimale
+			float d = dist(intersection.ptIntersection, camEyeCartesian);
+			if(intersection.intersect) {
+				if(  d < distanceMin){
+					distanceMin = d;
+					retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, true);
+				}
+			}
+	}
+*/
 	return retour;
 }
 /*
@@ -927,8 +447,6 @@ void displayRayImage () {
 }
 
 void rayTrace () {
-
-	cout<<"centre scene : "<<sceneCenter<<endl ;
 
 	//Direction dans la quelle regarde la camera
 	Vec3f d = camTarget - camEyeCartesian;
