@@ -19,7 +19,6 @@
 #include "Ray.h"
 #include "PointList.h"
 
-
 using namespace std;
 
 // App parameters
@@ -45,7 +44,6 @@ static Vec3f lightPos = Vec3f (1.f);
 static Vec3f lightColor = Vec3f (1.f);
 static Vec3f sceneCenter = Vec3f (0.f, 0.f, 0.f);
 static float sceneRadius = 1.f;
-//static vector<tinyobj::shape_t> shapes;
 static vector<tinyobj::material_t> materials;
 
 // Mouse parameters
@@ -86,7 +84,7 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-//renvoie la couleur de l'intersection
+//Calcul de la reponse couleur du point d'intersection
 Vec3f evaluateResponse(Intersection intersection) {
   Vec3f color;
   if(intersection.dansOmbre){
@@ -109,10 +107,10 @@ Vec3f evaluateResponse(Intersection intersection) {
     Vec3f fd = intersection.diffuse;
     Vec3f fa = intersection.ambient;
 
-    float alpha =0.5f;
+    float alpha =1.f/intersection.shininess;
 
     float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) );
-    float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(-wi,wh))  ,5);
+    float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
     float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
     float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
     float G = G01*G02;
@@ -127,7 +125,7 @@ Vec3f evaluateResponse(Intersection intersection) {
 }
 
 /*Renvoie l'intersection d'un ray avec la scene. S'il n'y a pas d'intersection,
-  renvoie une intersection avec le bool intersect = false */
+  renvoie une intersection avec le bool intersect = false. (Implementation sans KdTree) */
 Intersection raySceneIntersection(Ray ray) {
   Vec3f valDiffuse = Vec3f(1.0f);
   float valShininess = 5.f;
@@ -171,7 +169,7 @@ Intersection raySceneIntersection(Ray ray) {
 		  retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient, false,true);
 		}
 	  }
-	  //------------------------------------------- BOUCLE POUR CALCULER OMBRE --------------------------------------------------
+	  //------------------------------------------- BOUCLE POUR CALCULER LES OMBRES --------------------------------------------------
 	  for (unsigned int s = 0; s < shapes.size (); s++) {
 		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
 		  retour.dansOmbre = false;
@@ -183,18 +181,12 @@ Intersection raySceneIntersection(Ray ray) {
 		  Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
 		  Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
 		  Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
+		  
 		  //point qui correspond à l'intersection que l'on vient de trouver mais decalee de epsilon selon la normale
-		  Vec3f pointDecale;
+		  Vec3f pointDecale = retour.ptIntersection + retour.normal*0.0001f;
 		  //Vecteur de l'intersection vers la lumière
 		  Vec3f w0 = lightPos - retour.ptIntersection;
-		  //---------------- Tests realise pour faire marche l'ombre
-		  pointDecale = retour.ptIntersection + retour.normal*0.0001f;
-
-		  Ray rayIntersectLight;
-
-		  rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
-
-
+		  Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
 		  Intersection ombreIntersection = rayIntersectLight.rayTriangleIntersection(vertex1, vertex2, vertex3);
 		  if(ombreIntersection.intersect){
 			retour.dansOmbre = true;
@@ -207,9 +199,18 @@ Intersection raySceneIntersection(Ray ray) {
 	}
   }
   return retour;
-  
-  /*// ------------------------------------------------- POUR LE KDTREE--------------------- ---------------------
-  
+ } 
+/* ------------------------Version de rayScene avec le KdTree --------------------------------------------------------------------------
+ Intersection raySceneIntersection(Ray ray) {
+  Vec3f valDiffuse = Vec3f(1.0f);
+  float valShininess = 5.f;
+  Vec3f valSpecular = Vec3f(1.0f) ;
+  Vec3f valAmbient = Vec3f(1.f);
+
+  //chaque intersection est suivie de sa normale dans la liste;
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,false, false);
+  float distanceMin = 1000000.f;
+
 	//vector<float> listeDeToutLesPoints = getListOfAllPoints() ;
 	PointList listeTrie = triListe();
 
@@ -236,10 +237,6 @@ Intersection raySceneIntersection(Ray ray) {
 		  Vec3f pointDecale = retour.ptIntersection + retour.normal*0.0001f;
 		  Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
 		  rayIntersectLight.parcoursTree(node);
-
-
-
-
 		  Intersection ombreIntersection = rayIntersectLight.rayTriangleIntersection(vertex1, vertex2, vertex3);
 		  if(ombreIntersection.intersect){
 			retour.dansOmbre = true;
@@ -249,10 +246,9 @@ Intersection raySceneIntersection(Ray ray) {
 
 	  }
 	}
-  //----------------------------------------------------------------------------------------------------------------------*/
-
-  
+	return retour;
 }
+----------------------------------------------------------------------------------------------------------------------*/
 
 void computeSceneNormals () {
   for (unsigned int s = 0; s < shapes.size (); s++)

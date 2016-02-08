@@ -20,7 +20,6 @@ public :
   BoundingBox boundingBox ; 
   KdNode * leftChild = NULL;
   KdNode *rightChild = NULL;
-//intersection rayon - BBox
   bool intersection ;
   bool boolFeuille; // true si on remplit la feuille
   
