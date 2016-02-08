@@ -103,19 +103,20 @@ Vec3f evaluateResponse(Intersection intersection) {
     float norw0 = max(0.f,dot(n,w0));
     float norwi = max(dot(n,wi),dot(n,-wi));
 
-    //on recupere la diffuse du materiau via l'intersection
+    //on recupere la diffuse  et l'ambient du materiau via l'intersection
     Vec3f fd = intersection.diffuse;
     Vec3f fa = intersection.ambient;
 
-    float alpha =1.f/intersection.shininess;
+    float alpha =sqrt(2.f/(2.f + intersection.shininess)); //rugosite
+    float F0 = pow((1.f-intersection.ior)/(1.f+intersection.ior),2); //indice de refraction de Fresnel
 
     float D = pow(alpha,2)/(  Pi*pow( 1.f+(pow(alpha,2)-1.f)*pow(norwh,2) ,2) );
-    float F = 0.022f + (1.f-0.022f)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
+    float F = F0 + (1.f-F0)*pow(  1.f-max(0.f,dot(wi,wh))  ,5);
     float G01 = 2.f*norwi/(norwi+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norwi,2)));
     float G02 = 2.f*norw0/(norw0+sqrt(pow(alpha,2)+(1.f-pow(alpha,2))*pow(norw0,2))) ;
     float G = G01*G02;
 
-    Vec3f fs = Vec3f(D*F*G/(4*norwi*norw0));
+    Vec3f fs = Vec3f(D*F*G/(4.f*norwi*norw0));
 
     Vec3f f = fd + fs +fa;
 
@@ -131,9 +132,10 @@ Intersection raySceneIntersection(Ray ray) {
   float valShininess = 5.f;
   Vec3f valSpecular = Vec3f(1.0f) ;
   Vec3f valAmbient = Vec3f(1.f);
+  float valRefraction = 1.0f;
 
   //chaque intersection est suivie de sa normale dans la liste;
-  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,false, false);
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false, false);
   float distanceMin = 1000000.f;
 
   for (unsigned int s = 0; s < shapes.size (); s++) {
@@ -166,7 +168,7 @@ Intersection raySceneIntersection(Ray ray) {
 	  if(intersection.intersect) {
 		if(  d < distanceMin){
 		  distanceMin = d;
-		  retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient, false,true);
+		  retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient, valRefraction, false,true);
 		}
 	  }
 	  //------------------------------------------- BOUCLE POUR CALCULER LES OMBRES --------------------------------------------------
@@ -192,9 +194,7 @@ Intersection raySceneIntersection(Ray ray) {
 			retour.dansOmbre = true;
 			break;
 		  }
-		  //cout<<"apres test="<<retour.dansOmbre<<endl;
 		}
-
 	  }
 	}
   }
@@ -206,9 +206,10 @@ Intersection raySceneIntersection(Ray ray) {
   float valShininess = 5.f;
   Vec3f valSpecular = Vec3f(1.0f) ;
   Vec3f valAmbient = Vec3f(1.f);
+  float valRefraction = 1.f;
 
   //chaque intersection est suivie de sa normale dans la liste;
-  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,false, false);
+  Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false, false);
   float distanceMin = 1000000.f;
 
 	//vector<float> listeDeToutLesPoints = getListOfAllPoints() ;
@@ -230,7 +231,7 @@ Intersection raySceneIntersection(Ray ray) {
 		if(intersection.intersect) {
 			if(  d < distanceMin){
 				distanceMin = d;
-				retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient,false,true);
+				retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false,true);
 			}
 		}
 	}

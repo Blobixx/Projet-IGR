@@ -39,7 +39,7 @@ public:
 
 //methode d'intersection d'un rayon et d'une face carree
 Intersection Ray::rayRectangleIntersection(Face face){
-	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f), Vec3f(1.f));
+	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f), Vec3f(1.f),1.f);
 
  	Intersection intersection1 = this->rayTriangleIntersection(face.sommet0, face.sommet1, face.sommet2) ;
 	Intersection intersection2 = this->rayTriangleIntersection(face.sommet0, face.sommet2, face.sommet3) ;
@@ -103,7 +103,7 @@ vector<float> Ray::parcoursTree(KdNode &node){
 //renvoie l'intersection entre le rayon et un triangle
 Intersection Ray::rayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 
-  Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f),Vec3f(1.f),false,false);
+  Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f),Vec3f(1.f), 1.f,false,false);
 
 	Vec3f e0 = p1 - p0 ;
 	Vec3f e1 = p2 - p0 ;
@@ -129,7 +129,7 @@ Intersection Ray::rayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float t = dot(e1,r);
 	if ( t>=0.f) {
 	  //return Intersection(b0*p0+b1*p1+b2*p2,normale, Vec3f(1.f),5.f, true);
-	  return Intersection(t*direction + origin,normale, Vec3f(1.f),5.f, Vec3f(1.0f), Vec3f(1.f),false,true);
+	  return Intersection(t*direction + origin,normale, Vec3f(1.f),5.f, Vec3f(1.0f), Vec3f(1.f), 1.f, false,true);
 	}
 	return intersection ;
 }
