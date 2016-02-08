@@ -1,3 +1,4 @@
+// Classe qui definit un noeud d'un KdTree
 #ifndef _KDNODE_H
 #define _KDNODE_H
 

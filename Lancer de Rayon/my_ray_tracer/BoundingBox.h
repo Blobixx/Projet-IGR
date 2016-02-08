@@ -1,3 +1,4 @@
+//Classe qui definit une boite englobante minimal pour un ensemble de points
 #ifndef _BOUNDINGBOX_H
 #define _BOUNDINGBOX_H
 
@@ -54,9 +55,7 @@ vector<Face> createBox();
 
 } ;
 
-
-
-//renvoie la char correspondant a l'axe le plus grand
+//renvoie la char correspondant au plus grand axe de la boite
 char BoundingBox::maxAxis() {
   float xMin = this->getXMin();
   float xMax = this->getXMax();
@@ -87,6 +86,8 @@ char BoundingBox::maxAxis() {
 
 }
 
+/*A partir d'une Bounding Box, on cree les points sommets associes
+pour creer les faces. La methode renvoie ces faces.*/
 vector<Face> BoundingBox::createBox(){
 	vector<Face> listeFace ;
 	float xMin = this->xMin;

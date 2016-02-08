@@ -53,7 +53,6 @@ static bool mouseLeftButtonClicked = false;
 static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
-
 static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.0f, M_PI/2.f);
 static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
 
@@ -64,7 +63,7 @@ static unsigned char * rayImage = NULL;
 void printUsage () {
 	std::cerr << std::endl // send a line break to the standard error output
 		<< appTitle << std::endl
-		<< "Author : Tamy Boubekeur" << std::endl << std::endl
+		<< "Authors : Maud Buffier, Lena Pertersen, Shane Nana Yemming" << std::endl << std::endl
 		<< "Usage : ./myRayTracer [<file.obj>]" << std::endl
 		<< "Commandes clavier :" << std::endl
 		<< "------------------" << std::endl
@@ -87,7 +86,7 @@ void initOpenGL () {
 	glEnable (GL_COLOR_MATERIAL);
 }
 
-//renvoie la couleur
+//renvoie la couleur de l'intersection
 Vec3f evaluateResponse(Intersection intersection) {
  		Vec3f color;
     Vec3f wi = intersection.ptIntersection - lightPos;
@@ -123,6 +122,8 @@ Vec3f evaluateResponse(Intersection intersection) {
     return color ;
 }
 
+/*Renvoie l'intersection d'un ray avec la scene. S'il n'y a pas d'intersection,
+renvoie une intersection avec le bool intersect = false */
 Intersection raySceneIntersection(Ray ray) {
 	Vec3f valDiffuse = Vec3f(1.0f);
 	float valShininess = 5.f;
@@ -165,24 +166,18 @@ Intersection raySceneIntersection(Ray ray) {
 					distanceMin = d;
 						retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient);
 						//cout<<"premiere boucle="<<retour.dansOmbre<<endl;
-					}
 				}
 			}
+			}
 		}
-		// ----------------------- POUR LE KDTREE SANS LES OMBRES ----------------
+		// --------------------------------- POUR LE KDTREE SANS LES OMBRES ---------------------
 		/*
 		PointList listeDeToutLesPoints = getListOfAllPoints() ;
 		PointList listeTrie = triListe();
 
 		KdNode node = listeTrie.buildKdTree();
 
-
 		vector<float> listeTriangles = ray.parcoursTree(node);
-
-	PointList listeDeToutLesPoints = getListOfAllPoints() ;
-
-	PointList listeTrie = triListe();
-
 
 		for(unsigned int i=0;i<listeTriangles.size();i+=9) {
 		Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
@@ -221,13 +216,13 @@ Intersection raySceneIntersection(Ray ray) {
 			Vec3f w0 = lightPos - retour.ptIntersection;
 			float norw0 = dot(retour.normal, w0) ;
 			//---------------- Tests realise pour faire marche l'ombre
-			/*if (norw0>0) {
+			if (norw0>0) {
 	 	pointDecale = retour.ptIntersection + retour.normal*0.0001f;
 	 }
 	 if(norw0<0) {
 	 	pointDecale = retour.ptIntersection - retour.normal*0.0001f;
 	 }
-	Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);*/
+	//Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
 	/*
 	// Test pour verifier que la normal est vers le centre de la scene
 	Vec3f test = sceneCenter - retour.ptIntersection ;
@@ -244,12 +239,12 @@ Intersection raySceneIntersection(Ray ray) {
 	// -----------------------------------------------------------------
 	Ray rayIntersectLight;
 
-	if(norw0>0){
-		rayIntersectLight = Ray(pointDecale, -(lightPos - pointDecale));
-	}
-	if(norw0<0){
-		rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
-	}
+	//if(norw0>0){
+		rayIntersectLight = Ray(pointDecale, w0);
+	//}
+	//if(norw0<0){
+	//	rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
+	//}
 
 
 			Intersection ombreIntersection = rayIntersectLight.rayTriangleIntersection(vertex1, vertex2, vertex3);

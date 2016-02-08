@@ -1,4 +1,4 @@
-// Classe des rayons comportant 1 origine et 1 direction
+// Classe qui cree un rayon a partir d'une origine et d'une direction
 
 #ifndef _RAY_H
 #define _RAY_H
@@ -37,7 +37,7 @@ public:
 };
 
 
-
+//methode d'intersection d'un rayon et d'une face carree
 Intersection Ray::rayRectangleIntersection(Face face){
 	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f), Vec3f(1.f));
 
@@ -52,7 +52,8 @@ Intersection Ray::rayRectangleIntersection(Face face){
 	}
 	else return intersection ;
 }
-
+/*methode d'intersection d'un ray avec le kdTree.
+renvoie la liste des triangles dans la feuille dans laquelle arrive possiblement le rayon*/
 vector<float> Ray::parcoursTree(KdNode &node){
 	vector<float> listeTriangles;
 	BoundingBox boundingBox = node.boundingBox ; 

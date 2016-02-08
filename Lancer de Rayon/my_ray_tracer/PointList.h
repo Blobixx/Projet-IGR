@@ -1,3 +1,4 @@
+//Classe qui prend en attribut une liste de points
 #ifndef _POINTLIST_H
 #define _POINTLIST_H
 
@@ -467,6 +468,7 @@ if(compteur%3==2) {
 	return lowerPartition ;
 }
 
+//methode qui cree un Kdtree a partir de la liste de points
 KdNode PointList::buildKdTree() {
 
 KdNode node ;
