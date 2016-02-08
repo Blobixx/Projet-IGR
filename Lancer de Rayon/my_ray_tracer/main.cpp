@@ -89,6 +89,9 @@ void initOpenGL () {
 //renvoie la couleur de l'intersection
 Vec3f evaluateResponse(Intersection intersection) {
  		Vec3f color;
+ 		if(intersection.dansOmbre){
+ 		color = Vec3f(0.f,0.f,0.f);
+ 		}else{
     Vec3f wi = intersection.ptIntersection - lightPos;
     wi.normalize();
     Vec3f w0 = camEyeCartesian-intersection.ptIntersection;
@@ -119,6 +122,7 @@ Vec3f evaluateResponse(Intersection intersection) {
     Vec3f f = fd + fs +fa;
 
     color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
+    }
     return color ;
 }
 
@@ -131,7 +135,7 @@ Intersection raySceneIntersection(Ray ray) {
 	Vec3f valAmbient = Vec3f(1.f);
 
 	//chaque intersection est suivie de sa normale dans la liste;
-	Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient);
+	Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,false, false);
 	float distanceMin = 1000000.f;
 
 	for (unsigned int s = 0; s < shapes.size (); s++) {
@@ -164,12 +168,45 @@ Intersection raySceneIntersection(Ray ray) {
 			if(intersection.intersect) {
 				if(  d < distanceMin){
 					distanceMin = d;
-						retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient);
-						//cout<<"premiere boucle="<<retour.dansOmbre<<endl;
+						retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient, false,true);
 				}
 			}
+			//------------------------------------------- BOUCLE POUR CALCULER OMBRE --------------------------------------------------
+	for (unsigned int s = 0; s < shapes.size (); s++) {
+		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
+			retour.dansOmbre = false;
+			unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
+			unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
+			unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
+
+			//j'ai les 3 vertices de mon triangle
+			Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
+			Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
+			Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
+			//point qui correspond à l'intersection que l'on vient de trouver mais decalee de epsilon selon la normale
+			Vec3f pointDecale;
+			//Vecteur de l'intersection vers la lumière
+			Vec3f w0 = lightPos - retour.ptIntersection;
+			float norw0 = dot(retour.normal,w0);
+			//---------------- Tests realise pour faire marche l'ombre
+		 	pointDecale = retour.ptIntersection + retour.normal*0.0001f;
+
+	Ray rayIntersectLight;
+
+		rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
+
+
+			Intersection ombreIntersection = rayIntersectLight.rayTriangleIntersection(vertex1, vertex2, vertex3);
+			if(ombreIntersection.intersect){
+				retour.dansOmbre = true;
+				break;
 			}
+			//cout<<"apres test="<<retour.dansOmbre<<endl;
 		}
+
+	}
+		}
+	}
 		// --------------------------------- POUR LE KDTREE SANS LES OMBRES ---------------------
 		/*
 		PointList listeDeToutLesPoints = getListOfAllPoints() ;
@@ -196,65 +233,6 @@ Intersection raySceneIntersection(Ray ray) {
 		}
 	}*/
 	//----------------------------------------------------------------------------------------------------------------------
-
-
-	//------------------------------------------- BOUCLE POUR CALCULER OMBRE --------------------------------------------------
-	for (unsigned int s = 0; s < shapes.size (); s++) {
-		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
-
-			unsigned int indexV1 = 3*shapes[s].mesh.indices[3*t];
-			unsigned int indexV2 = 3*shapes[s].mesh.indices[3*t+1];
-			unsigned int indexV3 = 3*shapes[s].mesh.indices[3*t+2];
-
-			//j'ai les 3 vertices de mon triangle
-			Vec3f vertex1 = Vec3f(shapes[s].mesh.positions[indexV1],shapes[s].mesh.positions[indexV1+1],shapes[s].mesh.positions[indexV1+2]);
-			Vec3f vertex2 = Vec3f(shapes[s].mesh.positions[indexV2],shapes[s].mesh.positions[indexV2+1],shapes[s].mesh.positions[indexV2+2]);
-			Vec3f vertex3 = Vec3f(shapes[s].mesh.positions[indexV3],shapes[s].mesh.positions[indexV3+1],shapes[s].mesh.positions[indexV3+2]);
-			//point qui correspond à l'intersection que l'on vient de trouver mais decalee de epsilon selon la normale
-			Vec3f pointDecale;
-			//Vecteur de l'intersection vers la lumière
-			Vec3f w0 = lightPos - retour.ptIntersection;
-			float norw0 = dot(retour.normal, w0) ;
-			//---------------- Tests realise pour faire marche l'ombre
-			if (norw0>0) {
-	 	pointDecale = retour.ptIntersection + retour.normal*0.0001f;
-	 }
-	 if(norw0<0) {
-	 	pointDecale = retour.ptIntersection - retour.normal*0.0001f;
-	 }
-	//Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
-	/*
-	// Test pour verifier que la normal est vers le centre de la scene
-	Vec3f test = sceneCenter - retour.ptIntersection ;
-	float produitScalaire = dot(test, retour.normal);
-	Vec3f normal ;
-	if( produitScalaire > 0 ) {
-	 normal = -retour.normal ;
-	}
-	if(produitScalaire <0) {
-	 normal = retour.normal ;
-	}
-
-	Vec3f pointDecale =  retour.ptIntersection + normal*0.0001f ;*/
-	// -----------------------------------------------------------------
-	Ray rayIntersectLight;
-
-	//if(norw0>0){
-		rayIntersectLight = Ray(pointDecale, w0);
-	//}
-	//if(norw0<0){
-	//	rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
-	//}
-
-
-			Intersection ombreIntersection = rayIntersectLight.rayTriangleIntersection(vertex1, vertex2, vertex3);
-			if(ombreIntersection.intersect){
-				retour.dansOmbre = true;
-				break;
-			}
-		}
-
-	}
 
 	return retour;
 }
@@ -346,7 +324,7 @@ void initCamera () {
 }
 
 void initLighting () {
-	lightPos = Vec3f (sceneRadius, sceneRadius, sceneRadius);
+	lightPos = Vec3f(0.f,sceneRadius/2.f,sceneRadius) ;
 	glEnable (GL_LIGHTING);
 	GLfloat position[4] = {lightPos[0], lightPos[1], lightPos[2], 1.0f};
 	GLfloat color[4] = {lightColor[0], lightColor[1], lightColor[2], 1.0f};
@@ -454,12 +432,9 @@ void rayTrace () {
 			Vec3f positionPixel = positionDepart + Du*i+Dv*j;
 			Ray rayon = Ray(camEyeCartesian, positionPixel-camEyeCartesian) ;
 			Intersection intersection = raySceneIntersection(rayon) ;
-			if(intersection.dansOmbre){
-				pixelColor = Vec3f(0.f,0.f,1.f);
-			}
-			else{
-				pixelColor = evaluateResponse(intersection);
-			}
+
+			pixelColor = evaluateResponse(intersection);
+
 			rayImage[index] = pixelColor[0] * 255;
 			rayImage[index+1] = pixelColor[1] * 255;
 			rayImage[index+2] = pixelColor[2] * 255;
