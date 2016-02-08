@@ -89,7 +89,8 @@ char BoundingBox::maxAxis() {
 /*A partir d'une Bounding Box, on cree les points sommets associes
 pour creer les faces. La methode renvoie ces faces.*/
 vector<Face> BoundingBox::createBox(){
-	vector<Face> listeFace ;
+	vector<Face> listeFace;
+	listeFace.resize(6);
 	float xMin = this->xMin;
 	float xMax = this->xMax;
 	float yMin = this->yMin;
@@ -106,21 +107,19 @@ vector<Face> BoundingBox::createBox(){
 	Vec3f p7 = Vec3f(xMin, yMax,zMin);
 	Vec3f p8 = Vec3f(xMin, yMin,zMin);
 	
-	Face face1 = Face(p1,p2,p3,p4);
-	Face face2 = Face(p2,p6,p5,p3);
-	Face face3 = Face(p6,p5,p8,p7);
-	Face face4 = Face(p7,p1,p4,p8);
-	Face face5 = Face(p4,p8,p5,p3);
-	Face face6 = Face(p1,p7,p6,p2);
+	Face face0 = Face(p1,p2,p3,p4);
+	Face face1 = Face(p2,p6,p5,p3);
+	Face face2 = Face(p6,p5,p8,p7);
+	Face face3 = Face(p7,p1,p4,p8);
+	Face face4 = Face(p4,p8,p5,p3);
+	Face face5 = Face(p1,p7,p6,p2);
 
-	listeFace.push_back(face1);
-	listeFace.push_back(face2);
-	listeFace.push_back(face3);
-	listeFace.push_back(face4);
-	listeFace.push_back(face5);
-	listeFace.push_back(face6);
-
-	listeFace.resize(6);
+	listeFace[0] = face0;
+	listeFace[1] = face1;
+	listeFace[2] = face2;
+	listeFace[3] = face3;
+	listeFace[4] = face4;
+	listeFace[5] = face5;
 
 return listeFace;
 

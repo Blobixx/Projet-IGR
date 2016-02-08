@@ -8,7 +8,7 @@
 #include "tiny_obj_loader.h"
 #include "KdNode.h"
 #include "BoundingBox.h"
-static vector<tinyobj::shape_t> shapes;
+
 using namespace std;
 
 class PointList {
@@ -20,7 +20,7 @@ PointList() {}
 ~PointList() {}
 
 PointList(vector<float> liste) : pointList(liste) {}
-PointList(int n) {this->pointList.resize(n);}
+PointList(int n) {pointList.resize(n);}
 vector<float> TriSelection(unsigned int n);
 vector<float> triListe ();
 float findMedianSample(BoundingBox boundingBox);
@@ -28,10 +28,11 @@ vector<float> upperPartition( char axeMax, float val);
 vector<float> lowerPartition( char axeMax, float val);
 KdNode buildKdTree();
 BoundingBox computeBoundingBox();
-vector<float> getListOfAllPoints();
-int calculTailleTotalDePoints();
+//vector<float> getListOfAllPoints();
+
 
 } ;
+
 
 //algorithme de TriSelection
 vector<float> PointList::TriSelection(unsigned int n) {
@@ -59,8 +60,8 @@ vector<float> PointList::TriSelection(unsigned int n) {
 
 
 // Recalcul une liste de tous les points dans l'ordre des triangles pour pouvoir utiliser le KdTree avec le triangle
-vector<float> triListe (){
-PointList pointListRetour;
+PointList triListe (){
+PointList pointListRetour=PointList(taille);
 	for (unsigned int s = 0; s < shapes.size(); s++) {
 		//on tourne sur les triangles
 		for (unsigned int t = 0; t < shapes[s].mesh.indices.size() / 3; t++) {
@@ -86,14 +87,15 @@ PointList pointListRetour;
 		}
 	}
 
-return pointListRetour.pointList ;
+return pointListRetour ;
 }
 
 //retourne la coordonnee du point median selon le grand axe de la boite
 float PointList::findMedianSample(BoundingBox boundingBox) {
 	char axeMax = boundingBox.maxAxis() ;
-	int sizeList = this->pointList.size()/3 ;
-	PointList listeATrier=PointList(sizeList) ;
+	int sizeList = floor(this->pointList.size()/3 );
+	PointList listeATrier = PointList(sizeList) ;
+	PointList listeTrier = PointList(sizeList);
 
 	unsigned int i = 0 ;
 
@@ -116,7 +118,6 @@ float PointList::findMedianSample(BoundingBox boundingBox) {
 		}
 	}
 
-	PointList listeTrier ;
 	listeTrier.pointList = listeATrier.TriSelection( sizeList) ;
 
 	int indiceMedian = floor(listeTrier.pointList.size()/2) +1 ;
@@ -127,10 +128,10 @@ float PointList::findMedianSample(BoundingBox boundingBox) {
 
 //partie superieur selon le point median
 vector<float> PointList::upperPartition( char axeMax, float val) {
-int compteur =0;
+int compteur =-1;
 	vector<float> upperPartition ;
 	upperPartition.resize((*this).pointList.size()) ;
-	unsigned int indice =0;
+	unsigned int indice = 0;
 	if (axeMax == 'x') {
 		for(unsigned j = 0 ; j<(*this).pointList.size(); j+=3) {
 			compteur++;
@@ -150,7 +151,8 @@ if(compteur%3==0){
 				upperPartition[indice+8]=(*this).pointList[j+8];
 
 				indice+=9;
-				j+=6; }
+				j+=6;
+			}
 if(compteur%3==1) {
 				upperPartition[indice+3]=(*this).pointList[j];
 				upperPartition[indice+4]=(*this).pointList[j+1];
@@ -299,7 +301,7 @@ if(compteur%3==2) {
 
 //partie  inferieure
 vector<float> PointList::lowerPartition( char axeMax, float val) {
-int compteur =0;
+int compteur =-1;
 	vector<float> lowerPartition ;
 	lowerPartition.resize((*this).pointList.size()) ;
 	unsigned int indice =0;
@@ -471,6 +473,7 @@ if(compteur%3==2) {
 //methode qui cree un Kdtree a partir de la liste de points
 KdNode PointList::buildKdTree() {
 
+this->pointList.resize(taille);
 KdNode node ;
     //la dernière boundingBox est composée de 30 points (10 triangles)
     if((*this).pointList.size() > 90) {
@@ -478,8 +481,8 @@ KdNode node ;
       BoundingBox boundingBox = (*this).computeBoundingBox() ;
       char maxAxe = boundingBox.maxAxis() ;
       float point = (*this).findMedianSample(boundingBox) ;
-	PointList listUp ;
-	PointList listLow;
+	PointList listUp = PointList((*this).pointList.size());
+	PointList listLow = PointList((*this).pointList.size());
       listUp.pointList  = (*this).upperPartition( maxAxe, point) ;
       listLow.pointList  = (*this).lowerPartition( maxAxe, point) ;
 
@@ -487,8 +490,9 @@ KdNode node ;
       *(node.rightChild) = listLow.buildKdTree();
     }
     else{
-// PROBLEME
+
       node.feuille = (*this).pointList ;
+      node.boolFeuille=true;
    	}
     return node ; 
 }
@@ -521,17 +525,7 @@ BoundingBox PointList::computeBoundingBox() {
 	return boundingBox;
 }
 
-int calculTailleTotalDePoints(){
-	unsigned int taille=0;
-	for (unsigned int s = 0; s < shapes.size (); s++){
-		for (unsigned int p = 0; p < shapes[s].mesh.positions.size () / 3; p++) {
-			taille++;
-		}
-	}
-
-	return taille;
-}
-
+/*
 //retourne la liste de tous les points de la scene
 vector<float> getListOfAllPoints(){
 	unsigned int taille=calculTailleTotalDePoints();
@@ -550,6 +544,6 @@ vector<float> getListOfAllPoints(){
 	}
 	return pointList.pointList ;
 }
-
+*/
 #endif
 

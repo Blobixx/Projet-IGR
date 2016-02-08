@@ -41,8 +41,8 @@ public:
 Intersection Ray::rayRectangleIntersection(Face face){
 	Intersection intersection = Intersection(Vec3f(0.0f), Vec3f(1.f), Vec3f(0.f), 5.f, Vec3f(1.0f), Vec3f(1.f));
 
- 	Intersection intersection1 = this->rayTriangleIntersection(face.sommet1, face.sommet2, face.sommet3) ;
-	Intersection intersection2 = this->rayTriangleIntersection(face.sommet1, face.sommet3, face.sommet4) ;
+ 	Intersection intersection1 = this->rayTriangleIntersection(face.sommet0, face.sommet1, face.sommet2) ;
+	Intersection intersection2 = this->rayTriangleIntersection(face.sommet0, face.sommet2, face.sommet3) ;
 
 	if (intersection1.intersect) {
 		return intersection1 ;
@@ -50,35 +50,50 @@ Intersection Ray::rayRectangleIntersection(Face face){
 	if (intersection2.intersect) {
 		return intersection2 ;
 	}
-	else return intersection ;
+	
+	return intersection ;
+
 }
 /*methode d'intersection d'un ray avec le kdTree.
 renvoie la liste des triangles dans la feuille dans laquelle arrive possiblement le rayon*/
 vector<float> Ray::parcoursTree(KdNode &node){
 	vector<float> listeTriangles;
+	//listeTriangles.resize(taille);
 	BoundingBox boundingBox = node.boundingBox ; 
 
 	vector<Face> listeFaces = boundingBox.createBox();
 
 	for(unsigned int i=0;i<6;i++) {
-		if(this->rayRectangleIntersection(listeFaces[i]).intersect) {
+	Intersection intersection=this->rayRectangleIntersection(listeFaces[i]);
+		if(intersection.intersect) {
 			node.intersection = true;
+			cout<<"ya intersection"<<endl;
 		}
 	}
 
-	if(node.intersection){
+	/*if(node.intersection){
 		if(node.feuille.empty()){
 			node = *(node.leftChild) ; 
 			parcoursTree(node);}
 		else {return node.feuille;}
 	}
-	else if(!node.intersection) {
+	else {
 		if(node.feuille.empty()){
 			node = *(node.rightChild) ; 
 			parcoursTree(node);	
 	      }
 		else {return node.feuille;}
-    	}
+    	}*/
+    	
+    	if(node.intersection){
+		if(node.boolFeuille){
+			node = *(node.leftChild) ; 
+			parcoursTree(node);
+			node = *(node.rightChild) ;
+			parcoursTree(node); }
+		else {return node.feuille;}
+	}
+    	return node.feuille;
 	/*else {
 		listeTriangles.resize(1);
 		return listeTriangles ;
@@ -107,12 +122,12 @@ Intersection Ray::rayTriangleIntersection(Vec3f p0 , Vec3f p1,  Vec3f p2) {
 	float b1 = dot(r,direction) ;
 	float b2 = 1.0f-b0-b1 ;
 
-	if ((b0 < 0) || (b1 < 0) || (b2 < 0)) {
-		return intersection ;
+	if ((b0 < 0.f) || (b1 < 0.f) || (b2 < 0.f)) {
+	  return intersection ;
 	}
 
-	float t = dot(e1,r) ;
-	if ( t>=0) {
+	float t = dot(e1,r);
+	if ( t>=0.f) {
 	  //return Intersection(b0*p0+b1*p1+b2*p2,normale, Vec3f(1.f),5.f, true);
 	  return Intersection(t*direction + origin,normale, Vec3f(1.f),5.f, Vec3f(1.0f), Vec3f(1.f),false,true);
 	}
