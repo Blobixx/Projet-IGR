@@ -176,7 +176,13 @@ Intersection raySceneIntersection(Ray ray) {
 
 		KdNode node = listeTrie.buildKdTree();
 
+
 		vector<float> listeTriangles = ray.parcoursTree(node);
+
+	PointList listeDeToutLesPoints = getListOfAllPoints() ;
+
+	PointList listeTrie = triListe();
+
 
 		for(unsigned int i=0;i<listeTriangles.size();i+=9) {
 		Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
