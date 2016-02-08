@@ -57,8 +57,9 @@ Intersection Ray::rayRectangleIntersection(Face face){
 /*methode d'intersection d'un ray avec le kdTree.
 renvoie la liste des triangles dans la feuille dans laquelle arrive possiblement le rayon*/
 vector<float> Ray::parcoursTree(KdNode &node){
-	vector<float> listeTriangles;
-	//listeTriangles.resize(taille);
+	KdNode *noeudCourant;
+	//vector<float> listeTriangles;
+	//listeTriangles.resize(taille/3);
 	BoundingBox boundingBox = node.boundingBox ; 
 
 	vector<Face> listeFaces = boundingBox.createBox();
@@ -70,8 +71,8 @@ vector<float> Ray::parcoursTree(KdNode &node){
 			cout<<"ya intersection"<<endl;
 		}
 	}
-
-	/*if(node.intersection){
+/*
+	if(node.intersection){
 		if(node.feuille.empty()){
 			node = *(node.leftChild) ; 
 			parcoursTree(node);}
@@ -83,16 +84,27 @@ vector<float> Ray::parcoursTree(KdNode &node){
 			parcoursTree(node);	
 	      }
 		else {return node.feuille;}
-    	}*/
-    	
+    	}
+ */   	
     	if(node.intersection){
-		if(node.boolFeuille){
-			node = *(node.leftChild) ; 
-			parcoursTree(node);
-			node = *(node.rightChild) ;
-			parcoursTree(node); }
-		else {return node.feuille;}
+		if(!node.boolFeuille){
+			noeudCourant = &node;
+			node = *(node.leftChild); 
+			if(node.intersection){
+				parcoursTree(node);
+			}
+			else{
+			node = *(noeudCourant->leftChild);
+			parcoursTree(node);		
+			}
+		}
+		else {
+			return node.feuille;
+		}
 	}
+    	else{
+    		return node.feuille;
+    	}
     	return node.feuille;
 	/*else {
 		listeTriangles.resize(1);

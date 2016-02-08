@@ -51,7 +51,7 @@ static bool mouseLeftButtonClicked = false;
 static int clickedX, clickedY;
 static float baseCamPhi;
 static float baseCamTheta;
-static Vec3f camEyePolar = Vec3f(2.f*500.f, M_PI/2.0f, M_PI/2.f);
+static Vec3f camEyePolar = Vec3f(2.f*2.f, M_PI/2.0f, M_PI/2.f);
 static Vec3f camEyeCartesian = polarToCartesian(camEyePolar);
 
 // Raytraced image
@@ -84,7 +84,7 @@ void initOpenGL () {
   glEnable (GL_COLOR_MATERIAL);
 }
 
-//Calcul de la reponse couleur du point d'intersection
+/*----------------------------Calcul de la reponse couleur du point d'intersection--------------------*/
 Vec3f evaluateResponse(Intersection intersection) {
   Vec3f color;
   if(intersection.dansOmbre){
@@ -117,16 +117,15 @@ Vec3f evaluateResponse(Intersection intersection) {
     float G = G01*G02;
 
     Vec3f fs = Vec3f(D*F*G/(4.f*norwi*norw0));
-
     Vec3f f = fd + fs +fa;
-
-    color = lightColor*f*norwi ; //on multipliera par la réflectance dans rayTrace()
+    
+    color = lightColor*f*norwi ;
   }
   return color ;
 }
 
 /*Renvoie l'intersection d'un ray avec la scene. S'il n'y a pas d'intersection,
-  renvoie une intersection avec le bool intersect = false. (Implementation sans KdTree) */
+  renvoie une intersection avec le bool intersect = false. (Implementation sans KdTree)*/ 
 Intersection raySceneIntersection(Ray ray) {
   Vec3f valDiffuse = Vec3f(1.0f);
   float valShininess = 5.f;
@@ -134,7 +133,7 @@ Intersection raySceneIntersection(Ray ray) {
   Vec3f valAmbient = Vec3f(1.f);
   float valRefraction = 1.0f;
 
-  //chaque intersection est suivie de sa normale dans la liste;
+  //chaque intersection est suivie de sa normale dans la liste
   Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false, false);
   float distanceMin = 1000000.f;
 
@@ -199,8 +198,9 @@ Intersection raySceneIntersection(Ray ray) {
 	}
   }
   return retour;
- } 
-/* ------------------------Version de rayScene avec le KdTree --------------------------------------------------------------------------
+}
+/*
+ //------------------------Version de rayScene avec le KdTree --------------------------------------------------------------------------
  Intersection raySceneIntersection(Ray ray) {
   Vec3f valDiffuse = Vec3f(1.0f);
   float valShininess = 5.f;
@@ -212,10 +212,9 @@ Intersection raySceneIntersection(Ray ray) {
   Intersection retour = Intersection(camEyeCartesian, Vec3f(0.f,0.f,0.f), valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false, false);
   float distanceMin = 1000000.f;
 
-	//vector<float> listeDeToutLesPoints = getListOfAllPoints() ;
-	PointList listeTrie = triListe();
+	PointList listeTriee = triListe();
 
-	KdNode node = listeTrie.buildKdTree();
+	KdNode node = listeTriee.buildKdTree();
 
 	vector<float> listeTriangles = ray.parcoursTree(node);
 
@@ -223,7 +222,6 @@ Intersection raySceneIntersection(Ray ray) {
 		Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
 		Vec3f vertex2 = Vec3f(listeTriangles[i+3],listeTriangles[i+4],listeTriangles[i+5]);
 		Vec3f vertex3 = Vec3f(listeTriangles[i+6],listeTriangles[i+7],listeTriangles[i+8]);
-
 		Intersection intersection = ray.rayTriangleIntersection(vertex1, vertex2, vertex3);
 
 		//on retournera celle dont la distance est minimale
@@ -234,7 +232,13 @@ Intersection raySceneIntersection(Ray ray) {
 				retour = Intersection(intersection.ptIntersection, intersection.normal, valDiffuse, valShininess, valSpecular, valAmbient,valRefraction,false,true);
 			}
 		}
-	}
+		PointList listeTrie = triListe();
+		KdNode node = listeTrie.buildKdTree();
+		vector<float> listeTriangles = ray.parcoursTree(node);
+		for(unsigned int i=0;i<listeTriangles.size()/9;i+=9) {
+			Vec3f vertex1 = Vec3f(listeTriangles[i],listeTriangles[i+1],listeTriangles[i+2]);
+			Vec3f vertex2 = Vec3f(listeTriangles[i+3],listeTriangles[i+4],listeTriangles[i+5]);
+			Vec3f vertex3 = Vec3f(listeTriangles[i+6],listeTriangles[i+7],listeTriangles[i+8]);
 		  Vec3f pointDecale = retour.ptIntersection + retour.normal*0.0001f;
 		  Ray rayIntersectLight = Ray(pointDecale, lightPos - pointDecale);
 		  rayIntersectLight.parcoursTree(node);
@@ -244,12 +248,10 @@ Intersection raySceneIntersection(Ray ray) {
 			break;
 		  }
 		}
-
-	  }
 	}
 	return retour;
 }
-----------------------------------------------------------------------------------------------------------------------*/
+//----------------------------------------------------------------------------------------------------------------------*/
 
 void computeSceneNormals () {
   for (unsigned int s = 0; s < shapes.size (); s++)

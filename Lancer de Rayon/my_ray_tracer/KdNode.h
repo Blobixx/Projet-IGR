@@ -21,7 +21,7 @@ public :
   KdNode * leftChild = NULL;
   KdNode *rightChild = NULL;
   bool intersection ;
-  bool boolFeuille; // true si on remplit la feuille
+  bool boolFeuille; // true si t'es une feuille
   
   vector<float> feuille ;
 
